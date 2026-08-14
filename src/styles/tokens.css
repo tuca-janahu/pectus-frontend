@@ -1,0 +1,136 @@
+/* Design tokens ported from the Traque Med prototype (claude.ai/design
+   project 019e035f-82c7-7d7c-8319-2cacde267777, Traque Med.html / ui.jsx /
+   screens-dashboard.jsx). Values are copied verbatim from the source —
+   do not "round" or restyle them without checking the prototype first. */
+
+:root {
+  /* --- Brand & surfaces --- */
+  --tm-primary: #2f86d3;
+  --tm-primary-deep: #18456d;
+  --tm-bg: oklch(0.985 0.003 240);
+  --tm-surface: #ffffff;
+  --tm-surface-2: oklch(0.97 0.005 240);
+  --tm-fg: oklch(0.22 0.02 250);
+  --tm-fg-muted: oklch(0.45 0.02 250);
+  --tm-fg-subtle: oklch(0.6 0.015 250);
+  --tm-border: oklch(0.92 0.008 240);
+
+  /* --- Radius --- */
+  --tm-radius-card: 16px;
+  --tm-radius-button: 12px;
+  --tm-radius-input: 12px;
+  --tm-radius-sm: 10px;
+
+  /* --- Elevation --- */
+  --tm-shadow-card: 0 1px 3px rgb(15 23 42 / 0.04);
+  --tm-shadow-card-hover: 0 12px 32px rgb(15 23 42 / 0.08);
+
+  /* --- Typography --- */
+  --tm-font-display: 'Manrope', system-ui, sans-serif;
+  --tm-font-body: 'Inter', system-ui, sans-serif;
+
+  /* Size scale: every step is a size actually used in the prototype
+     screens (badges/labels up to KPI figures), not an invented ramp. */
+  --tm-text-2xs: 10px;
+  --tm-text-xs: 11px;
+  --tm-text-sm: 12px;
+  --tm-text-base: 13px;
+  --tm-text-md: 14px;
+  --tm-text-lg: 15px;
+  --tm-text-xl: 16px;
+  --tm-text-2xl: 18px;
+  --tm-text-3xl: 20px;
+  --tm-text-4xl: 22px;
+  --tm-text-5xl: 24px;
+  --tm-text-6xl: 28px;
+
+  --tm-weight-regular: 400;
+  --tm-weight-medium: 500;
+  --tm-weight-semibold: 600;
+  --tm-weight-bold: 700;
+  --tm-weight-extrabold: 800;
+
+  --tm-tracking-tightest: -0.03em;
+  --tm-tracking-tighter: -0.02em;
+  --tm-tracking-tight: -0.01em;
+  --tm-tracking-snug: -0.005em;
+  --tm-tracking-normal: 0em;
+  --tm-tracking-wide: 0.01em;
+  --tm-tracking-wider: 0.04em;
+
+  /* --- Semantic status colors (ui.jsx StatusBadge) --- */
+  --tm-status-agendada-bg: color-mix(in oklch, var(--tm-primary) 12%, transparent);
+  --tm-status-agendada-fg: var(--tm-primary-deep);
+  --tm-status-agendada-dot: var(--tm-primary);
+
+  --tm-status-concluida-bg: color-mix(in oklch, oklch(0.62 0.13 155) 14%, transparent);
+  --tm-status-concluida-fg: oklch(0.36 0.1 155);
+  --tm-status-concluida-dot: oklch(0.58 0.13 155);
+
+  --tm-status-cancelada-bg: color-mix(in oklch, oklch(0.62 0.16 25) 12%, transparent);
+  --tm-status-cancelada-fg: oklch(0.42 0.14 25);
+  --tm-status-cancelada-dot: oklch(0.6 0.16 25);
+
+  --tm-status-pendente-bg: color-mix(in oklch, oklch(0.7 0.14 75) 14%, transparent);
+  --tm-status-pendente-fg: oklch(0.42 0.12 65);
+  --tm-status-pendente-dot: oklch(0.7 0.14 75);
+
+  /* --- KPI accent colors (screens-dashboard.jsx KpiCard) --- */
+  --tm-accent-primary-bg: color-mix(in oklch, var(--tm-primary) 12%, transparent);
+  --tm-accent-primary-fg: var(--tm-primary-deep);
+  --tm-accent-green-bg: color-mix(in oklch, oklch(0.62 0.13 155) 14%, transparent);
+  --tm-accent-green-fg: oklch(0.4 0.11 155);
+  --tm-accent-violet-bg: oklch(0.93 0.06 290);
+  --tm-accent-violet-fg: oklch(0.42 0.12 290);
+  --tm-accent-amber-bg: oklch(0.93 0.07 75);
+  --tm-accent-amber-fg: oklch(0.45 0.12 60);
+
+  /* --- Avatar colors (ui.jsx TM_AVATAR_COLORS) --- */
+  --tm-avatar-sky-bg: color-mix(in oklch, var(--tm-primary) 14%, white);
+  --tm-avatar-sky-fg: var(--tm-primary);
+  --tm-avatar-teal-bg: oklch(0.93 0.05 195);
+  --tm-avatar-teal-fg: oklch(0.42 0.1 195);
+  --tm-avatar-violet-bg: oklch(0.93 0.06 290);
+  --tm-avatar-violet-fg: oklch(0.42 0.12 290);
+  --tm-avatar-rose-bg: oklch(0.93 0.06 20);
+  --tm-avatar-rose-fg: oklch(0.45 0.13 20);
+  --tm-avatar-amber-bg: oklch(0.93 0.07 75);
+  --tm-avatar-amber-fg: oklch(0.45 0.12 60);
+
+  /* --- Danger / validation (ui.jsx Button "danger", Input error state) --- */
+  --tm-danger-bg: oklch(0.95 0.04 25);
+  --tm-danger-fg: oklch(0.45 0.15 25);
+  --tm-danger-border: oklch(0.88 0.06 25);
+  --tm-error-text: oklch(0.5 0.16 25);
+  --tm-error-border: oklch(0.65 0.16 25);
+  --tm-focus-ring: color-mix(in oklch, var(--tm-primary) 16%, transparent);
+}
+
+/* Manual dark mode — the prototype toggles this attribute from its Tweaks
+   panel rather than following prefers-color-scheme, so we port that same
+   behavior instead of adding an OS-driven fallback it never had. */
+[data-theme='dark'] {
+  --tm-bg: oklch(0.16 0.02 250);
+  --tm-surface: oklch(0.22 0.02 250);
+  --tm-surface-2: oklch(0.26 0.02 250);
+  --tm-fg: oklch(0.96 0.005 240);
+  --tm-fg-muted: oklch(0.78 0.01 240);
+  --tm-fg-subtle: oklch(0.6 0.012 240);
+  --tm-border: oklch(0.32 0.015 250);
+  --tm-shadow-card: 0 1px 3px rgb(0 0 0 / 0.3);
+  --tm-shadow-card-hover: 0 12px 32px rgb(0 0 0 / 0.4);
+}
+
+[data-radius='soft'] {
+  --tm-radius-card: 20px;
+  --tm-radius-button: 14px;
+  --tm-radius-input: 14px;
+  --tm-radius-sm: 12px;
+}
+
+[data-radius='sharp'] {
+  --tm-radius-card: 8px;
+  --tm-radius-button: 6px;
+  --tm-radius-input: 6px;
+  --tm-radius-sm: 6px;
+}
