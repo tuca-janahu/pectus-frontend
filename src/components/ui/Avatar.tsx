@@ -2,12 +2,12 @@ import type { CSSProperties } from 'react'
 
 export type AvatarColor = 'sky' | 'teal' | 'violet' | 'rose' | 'amber'
 
-const COLOR_VARS: Record<AvatarColor, { bg: string; fg: string }> = {
-  sky: { bg: 'var(--tm-avatar-sky-bg)', fg: 'var(--tm-avatar-sky-fg)' },
-  teal: { bg: 'var(--tm-avatar-teal-bg)', fg: 'var(--tm-avatar-teal-fg)' },
-  violet: { bg: 'var(--tm-avatar-violet-bg)', fg: 'var(--tm-avatar-violet-fg)' },
-  rose: { bg: 'var(--tm-avatar-rose-bg)', fg: 'var(--tm-avatar-rose-fg)' },
-  amber: { bg: 'var(--tm-avatar-amber-bg)', fg: 'var(--tm-avatar-amber-fg)' },
+const COLOR_CLASSES: Record<AvatarColor, string> = {
+  sky: 'bg-tm-avatar-sky-bg text-tm-avatar-sky-fg',
+  teal: 'bg-tm-avatar-teal-bg text-tm-avatar-teal-fg',
+  violet: 'bg-tm-avatar-violet-bg text-tm-avatar-violet-fg',
+  rose: 'bg-tm-avatar-rose-bg text-tm-avatar-rose-fg',
+  amber: 'bg-tm-avatar-amber-bg text-tm-avatar-amber-fg',
 }
 
 export interface AvatarProps {
@@ -20,23 +20,16 @@ export interface AvatarProps {
 }
 
 export function Avatar({ initials, color = 'sky', size = 40, src, ring = false, style }: AvatarProps) {
-  const c = COLOR_VARS[color] ?? COLOR_VARS.sky
   return (
     <div
+      className={`inline-flex shrink-0 items-center justify-center rounded-full font-semibold tracking-[0.01em] ${
+        src ? 'bg-cover bg-center' : COLOR_CLASSES[color] ?? COLOR_CLASSES.sky
+      } ${ring ? 'shadow-[0_0_0_3px_rgb(255_255_255_/_0.25),0_0_0_4px_var(--tm-primary)]' : ''}`}
       style={{
         width: size,
         height: size,
-        borderRadius: '50%',
-        background: src ? `center/cover url(${src})` : c.bg,
-        color: c.fg,
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontWeight: 600,
         fontSize: size * 0.38,
-        letterSpacing: '0.01em',
-        flexShrink: 0,
-        boxShadow: ring ? '0 0 0 3px rgb(255 255 255 / .25), 0 0 0 4px var(--tm-primary)' : undefined,
+        backgroundImage: src ? `url(${src})` : undefined,
         ...style,
       }}
     >

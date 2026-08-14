@@ -1,4 +1,4 @@
-import { useState, type InputHTMLAttributes, type ReactNode } from 'react'
+import type { InputHTMLAttributes, ReactNode } from 'react'
 
 export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
   label?: string
@@ -22,48 +22,27 @@ export function Input({
   hint,
   ...rest
 }: InputProps) {
-  const [focus, setFocus] = useState(false)
   return (
-    <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      {label && <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--tm-fg)' }}>{label}</span>}
+    <label className="flex flex-col gap-1.5">
+      {label && <span className="text-tm-base font-semibold text-tm-fg">{label}</span>}
       <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          background: 'var(--tm-surface)',
-          border: '1.5px solid ' + (error ? 'var(--tm-error-border)' : focus ? 'var(--tm-primary)' : 'var(--tm-border)'),
-          borderRadius: 'var(--tm-radius-input)',
-          padding: '0 14px',
-          height: 44,
-          transition: 'all .18s ease',
-          boxShadow: focus ? '0 0 0 4px var(--tm-focus-ring)' : 'none',
-        }}
+        className={`flex h-11 items-center gap-2.5 rounded-tm-input border-[1.5px] bg-tm-surface px-3.5 transition-all duration-[180ms] ease-in-out focus-within:shadow-[0_0_0_4px_var(--tm-focus-ring)] ${
+          error ? 'border-tm-error-border' : 'border-tm-border focus-within:border-tm-primary'
+        }`}
       >
-        {icon && <span style={{ color: 'var(--tm-fg-subtle)', display: 'inline-flex' }}>{icon}</span>}
+        {icon && <span className="inline-flex text-tm-fg-subtle">{icon}</span>}
         <input
           type={type}
           value={value ?? ''}
           onChange={onChange}
           placeholder={placeholder}
-          onFocus={() => setFocus(true)}
-          onBlur={() => setFocus(false)}
           {...rest}
-          style={{
-            flex: 1,
-            border: 'none',
-            outline: 'none',
-            background: 'transparent',
-            fontFamily: 'inherit',
-            fontSize: 14,
-            color: 'var(--tm-fg)',
-            minWidth: 0,
-          }}
+          className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-tm-md text-tm-fg outline-none"
         />
         {iconRight}
       </div>
-      {hint && !error && <span style={{ fontSize: 12, color: 'var(--tm-fg-subtle)' }}>{hint}</span>}
-      {error && <span style={{ fontSize: 12, color: 'var(--tm-error-text)' }}>{error}</span>}
+      {hint && !error && <span className="text-tm-sm text-tm-fg-subtle">{hint}</span>}
+      {error && <span className="text-tm-sm text-tm-error-text">{error}</span>}
     </label>
   )
 }

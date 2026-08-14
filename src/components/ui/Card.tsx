@@ -12,32 +12,8 @@ export function Card({ children, style, padded = true, hover = false, onClick }:
   return (
     <div
       onClick={onClick}
-      style={{
-        background: 'var(--tm-surface)',
-        border: '1px solid var(--tm-border)',
-        borderRadius: 'var(--tm-radius-card)',
-        padding: padded ? 20 : 0,
-        boxShadow: 'var(--tm-shadow-card)',
-        transition: 'all .2s ease',
-        cursor: onClick ? 'pointer' : 'default',
-        ...style,
-      }}
-      onMouseEnter={
-        hover
-          ? (e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)'
-              e.currentTarget.style.boxShadow = 'var(--tm-shadow-card-hover)'
-            }
-          : undefined
-      }
-      onMouseLeave={
-        hover
-          ? (e) => {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = 'var(--tm-shadow-card)'
-            }
-          : undefined
-      }
+      className={`bg-tm-surface border border-tm-border rounded-tm-card shadow-tm-card transition-all duration-200 ease-in-out ${padded ? 'p-5' : 'p-0'} ${onClick ? 'cursor-pointer' : 'cursor-default'} ${hover ? 'hover:-translate-y-0.5 hover:shadow-tm-card-hover' : ''}`}
+      style={style}
     >
       {children}
     </div>

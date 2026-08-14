@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Button, StatusBadge, type FichaStatus } from '../components/ui'
-import './DesignTokensPage.css'
 
 type Theme = 'light' | 'dark'
 type Radius = 'sharp' | 'default' | 'soft'
@@ -52,27 +51,32 @@ export function DesignTokensPage() {
     document.documentElement.setAttribute('data-radius', radius)
   }, [radius])
 
+  const toggleClass = (active: boolean) =>
+    `rounded-[7px] border-none bg-transparent px-3.5 py-1.5 font-[inherit] text-tm-base font-semibold cursor-pointer transition-colors duration-150 ${
+      active ? 'bg-tm-primary text-white' : 'text-tm-fg-muted'
+    }`
+
   return (
-    <div className="styleguide">
-      <header className="styleguide-header">
+    <div className="flex flex-col gap-8 text-tm-fg">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <div className="styleguide-title">Traque Med — Design tokens</div>
-          <div className="styleguide-subtitle">
+          <div className="text-tm-4xl font-bold tracking-[-0.02em]">Traque Med — Design tokens</div>
+          <div className="mt-1 text-tm-md text-tm-fg-muted">
             Cor, tipografia e raio portados do protótipo para o design system do front. Página temporária até a tela
             Início real ser implementada.
           </div>
         </div>
-        <div className="styleguide-controls">
-          <div className="sg-toggle-group">
+        <div className="flex flex-wrap gap-2">
+          <div className="flex gap-1 rounded-tm-sm border border-tm-border bg-tm-surface-2 p-1">
             {(['light', 'dark'] as Theme[]).map((t) => (
-              <button key={t} className="sg-toggle" data-active={theme === t} onClick={() => setTheme(t)}>
+              <button key={t} className={toggleClass(theme === t)} onClick={() => setTheme(t)}>
                 {t === 'light' ? 'Claro' : 'Escuro'}
               </button>
             ))}
           </div>
-          <div className="sg-toggle-group">
+          <div className="flex gap-1 rounded-tm-sm border border-tm-border bg-tm-surface-2 p-1">
             {RADII.map((r) => (
-              <button key={r.key} className="sg-toggle" data-active={radius === r.key} onClick={() => setRadius(r.key)}>
+              <button key={r.key} className={toggleClass(radius === r.key)} onClick={() => setRadius(r.key)}>
                 {r.label}
               </button>
             ))}
@@ -80,25 +84,24 @@ export function DesignTokensPage() {
         </div>
       </header>
 
-      <section className="sg-section">
-        <div className="sg-section-title">Cor</div>
-        <div className="sg-swatch-grid">
+      <section className="flex flex-col gap-3.5">
+        <div className="text-tm-2xl font-bold tracking-[-0.01em]">Cor</div>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3">
           {COLOR_SWATCHES.map((c) => (
-            <div key={c.varName} className="sg-swatch">
-              <div
-                className="sg-swatch-fill"
-                style={{ background: `var(${c.varName})`, borderBottom: '1px solid var(--tm-border)' }}
-              />
-              <div className="sg-swatch-label">
+            <div key={c.varName} className="overflow-hidden rounded-tm-sm border border-tm-border">
+              <div className="h-14 border-b border-tm-border" style={{ background: `var(${c.varName})` }} />
+              <div className="bg-tm-surface px-2.5 py-2 text-tm-sm font-medium">
                 {c.label}
-                <span className="sg-swatch-value">{c.varName}</span>
+                <span className="block font-mono text-tm-2xs text-tm-fg-subtle [overflow-wrap:anywhere]">
+                  {c.varName}
+                </span>
               </div>
             </div>
           ))}
         </div>
 
-        <div className="sg-card">
-          <div className="sg-badge-row">
+        <div className="rounded-tm-card border border-tm-border bg-tm-surface p-5 shadow-tm-card">
+          <div className="flex flex-wrap gap-2.5">
             {STATUSES.map((s) => (
               <StatusBadge key={s} status={s} />
             ))}
@@ -106,16 +109,19 @@ export function DesignTokensPage() {
         </div>
       </section>
 
-      <section className="sg-section">
-        <div className="sg-section-title">Tipografia</div>
-        <div className="sg-card">
+      <section className="flex flex-col gap-3.5">
+        <div className="text-tm-2xl font-bold tracking-[-0.01em]">Tipografia</div>
+        <div className="rounded-tm-card border border-tm-border bg-tm-surface p-5 shadow-tm-card">
           {TYPE_SCALE.map((t) => (
-            <div key={t.token} className="sg-type-row">
-              <span className="sg-type-meta">
+            <div
+              key={t.token}
+              className="flex items-baseline gap-4 border-b border-tm-border py-2.5 last:border-b-0"
+            >
+              <span className="w-[190px] shrink-0 font-mono text-tm-2xs text-tm-fg-subtle">
                 {t.token} · {t.size} / {t.weight}
               </span>
               <span
-                className="sg-type-sample"
+                className="font-tm-display text-tm-fg"
                 style={{
                   fontSize: `var(${t.token})`,
                   fontWeight: t.weight === 'bold' ? 700 : t.weight === 'semibold' ? 600 : 500,
@@ -128,24 +134,24 @@ export function DesignTokensPage() {
         </div>
       </section>
 
-      <section className="sg-section">
-        <div className="sg-section-title">Raio</div>
-        <div className="sg-radius-row">
-          <div className="sg-radius-box" style={{ borderRadius: 'var(--tm-radius-sm)' }}>
+      <section className="flex flex-col gap-3.5">
+        <div className="text-tm-2xl font-bold tracking-[-0.01em]">Raio</div>
+        <div className="flex flex-wrap gap-4">
+          <div className="flex h-24 w-24 items-center justify-center border-[1.5px] border-tm-border bg-tm-surface-2 font-mono text-tm-2xs text-tm-fg-subtle rounded-tm-sm">
             sm
           </div>
-          <div className="sg-radius-box" style={{ borderRadius: 'var(--tm-radius-input)' }}>
+          <div className="flex h-24 w-24 items-center justify-center border-[1.5px] border-tm-border bg-tm-surface-2 font-mono text-tm-2xs text-tm-fg-subtle rounded-tm-input">
             input
           </div>
-          <div className="sg-radius-box" style={{ borderRadius: 'var(--tm-radius-button)' }}>
+          <div className="flex h-24 w-24 items-center justify-center border-[1.5px] border-tm-border bg-tm-surface-2 font-mono text-tm-2xs text-tm-fg-subtle rounded-tm-button">
             button
           </div>
-          <div className="sg-radius-box" style={{ borderRadius: 'var(--tm-radius-card)' }}>
+          <div className="flex h-24 w-24 items-center justify-center border-[1.5px] border-tm-border bg-tm-surface-2 font-mono text-tm-2xs text-tm-fg-subtle rounded-tm-card">
             card
           </div>
         </div>
 
-        <div className="sg-button-row">
+        <div className="flex flex-wrap gap-2.5">
           <Button variant="primary">Primary</Button>
           <Button variant="secondary">Secondary</Button>
           <Button variant="danger">Danger</Button>

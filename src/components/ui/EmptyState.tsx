@@ -9,34 +9,12 @@ export interface EmptyStateProps {
 
 export function EmptyState({ icon, title, body, action }: EmptyStateProps) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '36px 20px',
-        textAlign: 'center',
-        gap: 12,
-      }}
-    >
-      <div
-        style={{
-          width: 56,
-          height: 56,
-          borderRadius: 16,
-          background: 'color-mix(in oklch, var(--tm-primary) 8%, var(--tm-surface-2))',
-          color: 'var(--tm-primary)',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 28,
-        }}
-      >
+    <div className="flex flex-col items-center justify-center gap-3 px-5 py-9 text-center">
+      <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[color-mix(in_oklch,var(--tm-primary)_8%,var(--tm-surface-2))] text-tm-primary text-[28px]">
         {icon}
       </div>
-      <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--tm-fg)' }}>{title}</div>
-      {body && <div style={{ fontSize: 13, color: 'var(--tm-fg-muted)', maxWidth: 260 }}>{body}</div>}
+      <div className="text-tm-xl font-semibold text-tm-fg">{title}</div>
+      {body && <div className="max-w-[260px] text-tm-base text-tm-fg-muted">{body}</div>}
       {action}
     </div>
   )

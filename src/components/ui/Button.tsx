@@ -12,46 +12,20 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
   style?: CSSProperties
 }
 
-const SIZES: Record<ButtonSize, CSSProperties> = {
-  sm: { padding: '8px 14px', fontSize: 13, height: 34, gap: 6 },
-  md: { padding: '10px 18px', fontSize: 14, height: 40, gap: 8 },
-  lg: { padding: '14px 24px', fontSize: 15, height: 48, gap: 10 },
+const SIZES: Record<ButtonSize, string> = {
+  sm: 'px-3.5 py-2 text-[13px] h-[34px] gap-1.5',
+  md: 'px-[18px] py-2.5 text-tm-md h-10 gap-2',
+  lg: 'px-6 py-3.5 text-tm-lg h-12 gap-2.5',
 }
 
-const VARIANTS: Record<ButtonVariant, CSSProperties> = {
-  primary: {
-    background: 'var(--tm-primary)',
-    color: 'white',
-    border: '1px solid transparent',
-    boxShadow: '0 1px 2px rgb(15 23 42 / .08), inset 0 1px 0 rgb(255 255 255 / .14)',
-  },
-  secondary: {
-    background: 'var(--tm-surface-2)',
-    color: 'var(--tm-fg)',
-    border: '1px solid var(--tm-border)',
-  },
-  ghost: {
-    background: 'transparent',
-    color: 'var(--tm-fg-muted)',
-    border: '1px solid transparent',
-  },
-  onDark: {
-    background: 'rgb(255 255 255 / .12)',
-    color: 'white',
-    border: '1px solid rgb(255 255 255 / .25)',
-    backdropFilter: 'blur(8px)',
-  },
-  light: {
-    background: 'white',
-    color: 'var(--tm-primary-deep)',
-    border: '1px solid transparent',
-    boxShadow: '0 4px 12px rgb(15 23 42 / .12)',
-  },
-  danger: {
-    background: 'var(--tm-danger-bg)',
-    color: 'var(--tm-danger-fg)',
-    border: '1px solid var(--tm-danger-border)',
-  },
+const VARIANTS: Record<ButtonVariant, string> = {
+  primary:
+    'bg-tm-primary text-white border border-transparent shadow-[0_1px_2px_rgb(15_23_42_/_0.08),inset_0_1px_0_rgb(255_255_255_/_0.14)]',
+  secondary: 'bg-tm-surface-2 text-tm-fg border border-tm-border',
+  ghost: 'bg-transparent text-tm-fg-muted border border-transparent',
+  onDark: 'bg-[rgb(255_255_255_/_0.12)] text-white border border-[rgb(255_255_255_/_0.25)] backdrop-blur',
+  light: 'bg-white text-tm-primary-deep border border-transparent shadow-[0_4px_12px_rgb(15_23_42_/_0.12)]',
+  danger: 'bg-tm-danger-bg text-tm-danger-fg border border-tm-danger-border',
 }
 
 export function Button({
@@ -62,6 +36,7 @@ export function Button({
   iconRight,
   full,
   type = 'button',
+  className,
   style,
   ...rest
 }: ButtonProps) {
@@ -69,21 +44,8 @@ export function Button({
     <button
       type={type}
       {...rest}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: 'var(--tm-radius-button)',
-        fontWeight: 600,
-        letterSpacing: '-0.005em',
-        cursor: 'pointer',
-        transition: 'all .18s ease',
-        fontFamily: 'inherit',
-        width: full ? '100%' : undefined,
-        ...SIZES[size],
-        ...VARIANTS[variant],
-        ...style,
-      }}
+      className={`inline-flex items-center justify-center rounded-tm-button font-semibold tracking-[-0.005em] cursor-pointer transition-all duration-[180ms] ease-in-out font-[inherit] ${full ? 'w-full' : ''} ${SIZES[size]} ${VARIANTS[variant]} ${className ?? ''}`}
+      style={style}
     >
       {icon}
       {children}

@@ -8,16 +8,10 @@ export interface MobileNavProps {
 export function MobileNav({ route, onNavigate }: MobileNavProps) {
   return (
     <nav
+      className="sticky bottom-0 z-[5] grid border-t border-tm-border bg-tm-surface px-1 pt-1.5"
       style={{
-        background: 'var(--tm-surface)',
-        borderTop: '1px solid var(--tm-border)',
-        display: 'grid',
         gridTemplateColumns: `repeat(${TM_NAV_ITEMS.length}, 1fr)`,
-        padding: '6px 4px 8px',
         paddingBottom: 'max(8px, env(safe-area-inset-bottom))',
-        position: 'sticky',
-        bottom: 0,
-        zIndex: 5,
       }}
     >
       {TM_NAV_ITEMS.map((item) => {
@@ -26,35 +20,11 @@ export function MobileNav({ route, onNavigate }: MobileNavProps) {
           <button
             key={item.id}
             onClick={() => onNavigate(item.id)}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 4,
-              padding: '8px 4px',
-              background: 'transparent',
-              border: 'none',
-              color: active ? 'var(--tm-primary)' : 'var(--tm-fg-subtle)',
-              fontSize: 11,
-              fontWeight: active ? 600 : 500,
-              fontFamily: 'inherit',
-              cursor: 'pointer',
-              transition: 'all .15s ease',
-              position: 'relative',
-            }}
+            className={`relative flex cursor-pointer flex-col items-center gap-1 border-none bg-transparent px-1 py-2 font-[inherit] text-tm-xs transition-all duration-150 ease-in-out ${
+              active ? 'font-semibold text-tm-primary' : 'font-medium text-tm-fg-subtle'
+            }`}
           >
-            {active && (
-              <span
-                style={{
-                  position: 'absolute',
-                  top: -6,
-                  width: 24,
-                  height: 3,
-                  background: 'var(--tm-primary)',
-                  borderRadius: 999,
-                }}
-              />
-            )}
+            {active && <span className="absolute -top-1.5 h-[3px] w-6 rounded-full bg-tm-primary" />}
             {item.icon}
             <span>{item.label}</span>
           </button>

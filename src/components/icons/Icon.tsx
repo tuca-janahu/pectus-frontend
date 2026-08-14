@@ -16,7 +16,7 @@ const BASE = {
 
 export function Icon({ size = 20, style, children, ...rest }: IconProps & { children: React.ReactNode }) {
   return (
-    <svg {...BASE} {...rest} style={{ width: size, height: size, flexShrink: 0, ...style }}>
+    <svg {...BASE} {...rest} className="shrink-0" style={{ width: size, height: size, ...style }}>
       {children}
     </svg>
   )

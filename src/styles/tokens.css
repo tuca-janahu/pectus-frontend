@@ -3,6 +3,8 @@
    screens-dashboard.jsx). Values are copied verbatim from the source —
    do not "round" or restyle them without checking the prototype first. */
 
+@import 'tailwindcss';
+
 :root {
   /* --- Brand & surfaces --- */
   --tm-primary: #2f86d3;
@@ -133,4 +135,88 @@
   --tm-radius-button: 6px;
   --tm-radius-input: 6px;
   --tm-radius-sm: 6px;
+}
+
+/* Tailwind theme registration — aliases the tokens above into Tailwind's
+   namespaces (--color-*, --radius-*, --shadow-*, --font-*, --text-*) so
+   utilities like `bg-tm-primary` / `rounded-tm-card` / `text-tm-2xs` exist.
+   These stay `var()` references on purpose: the alias is just a CSS custom
+   property, so it still resolves through the [data-theme='dark'] /
+   [data-radius] cascade above at paint time — no JS theme switching needed. */
+@theme {
+  --breakpoint-nav: 60rem; /* 960px — shell sidebar/topbar breakpoint */
+
+  --color-tm-primary: var(--tm-primary);
+  --color-tm-primary-deep: var(--tm-primary-deep);
+  --color-tm-bg: var(--tm-bg);
+  --color-tm-surface: var(--tm-surface);
+  --color-tm-surface-2: var(--tm-surface-2);
+  --color-tm-fg: var(--tm-fg);
+  --color-tm-fg-muted: var(--tm-fg-muted);
+  --color-tm-fg-subtle: var(--tm-fg-subtle);
+  --color-tm-border: var(--tm-border);
+
+  --color-tm-status-agendada-bg: var(--tm-status-agendada-bg);
+  --color-tm-status-agendada-fg: var(--tm-status-agendada-fg);
+  --color-tm-status-agendada-dot: var(--tm-status-agendada-dot);
+  --color-tm-status-concluida-bg: var(--tm-status-concluida-bg);
+  --color-tm-status-concluida-fg: var(--tm-status-concluida-fg);
+  --color-tm-status-concluida-dot: var(--tm-status-concluida-dot);
+  --color-tm-status-cancelada-bg: var(--tm-status-cancelada-bg);
+  --color-tm-status-cancelada-fg: var(--tm-status-cancelada-fg);
+  --color-tm-status-cancelada-dot: var(--tm-status-cancelada-dot);
+  --color-tm-status-pendente-bg: var(--tm-status-pendente-bg);
+  --color-tm-status-pendente-fg: var(--tm-status-pendente-fg);
+  --color-tm-status-pendente-dot: var(--tm-status-pendente-dot);
+
+  --color-tm-accent-primary-bg: var(--tm-accent-primary-bg);
+  --color-tm-accent-primary-fg: var(--tm-accent-primary-fg);
+  --color-tm-accent-green-bg: var(--tm-accent-green-bg);
+  --color-tm-accent-green-fg: var(--tm-accent-green-fg);
+  --color-tm-accent-violet-bg: var(--tm-accent-violet-bg);
+  --color-tm-accent-violet-fg: var(--tm-accent-violet-fg);
+  --color-tm-accent-amber-bg: var(--tm-accent-amber-bg);
+  --color-tm-accent-amber-fg: var(--tm-accent-amber-fg);
+
+  --color-tm-avatar-sky-bg: var(--tm-avatar-sky-bg);
+  --color-tm-avatar-sky-fg: var(--tm-avatar-sky-fg);
+  --color-tm-avatar-teal-bg: var(--tm-avatar-teal-bg);
+  --color-tm-avatar-teal-fg: var(--tm-avatar-teal-fg);
+  --color-tm-avatar-violet-bg: var(--tm-avatar-violet-bg);
+  --color-tm-avatar-violet-fg: var(--tm-avatar-violet-fg);
+  --color-tm-avatar-rose-bg: var(--tm-avatar-rose-bg);
+  --color-tm-avatar-rose-fg: var(--tm-avatar-rose-fg);
+  --color-tm-avatar-amber-bg: var(--tm-avatar-amber-bg);
+  --color-tm-avatar-amber-fg: var(--tm-avatar-amber-fg);
+
+  --color-tm-danger-bg: var(--tm-danger-bg);
+  --color-tm-danger-fg: var(--tm-danger-fg);
+  --color-tm-danger-border: var(--tm-danger-border);
+  --color-tm-error-text: var(--tm-error-text);
+  --color-tm-error-border: var(--tm-error-border);
+  --color-tm-focus-ring: var(--tm-focus-ring);
+
+  --radius-tm-card: var(--tm-radius-card);
+  --radius-tm-button: var(--tm-radius-button);
+  --radius-tm-input: var(--tm-radius-input);
+  --radius-tm-sm: var(--tm-radius-sm);
+
+  --shadow-tm-card: var(--tm-shadow-card);
+  --shadow-tm-card-hover: var(--tm-shadow-card-hover);
+
+  --font-tm-display: var(--tm-font-display);
+  --font-tm-body: var(--tm-font-body);
+
+  --text-tm-2xs: var(--tm-text-2xs);
+  --text-tm-xs: var(--tm-text-xs);
+  --text-tm-sm: var(--tm-text-sm);
+  --text-tm-base: var(--tm-text-base);
+  --text-tm-md: var(--tm-text-md);
+  --text-tm-lg: var(--tm-text-lg);
+  --text-tm-xl: var(--tm-text-xl);
+  --text-tm-2xl: var(--tm-text-2xl);
+  --text-tm-3xl: var(--tm-text-3xl);
+  --text-tm-4xl: var(--tm-text-4xl);
+  --text-tm-5xl: var(--tm-text-5xl);
+  --text-tm-6xl: var(--tm-text-6xl);
 }

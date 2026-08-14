@@ -1,49 +1,32 @@
 @import './tokens.css';
+/* Preflight (pulled in by tokens.css's `@import "tailwindcss"`) already
+   resets box-sizing, margin/padding, and form-element font inheritance —
+   only the project-specific overrides below are needed on top of it. */
 
-* {
-  box-sizing: border-box;
-}
+@layer base {
+  body {
+    @apply font-tm-body bg-tm-bg text-tm-fg antialiased;
+    text-rendering: optimizeLegibility;
+  }
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-}
+  h1,
+  h2,
+  h3,
+  h4,
+  .tm-display {
+    @apply font-tm-display m-0;
+  }
 
-body {
-  font-family: var(--tm-font-body);
-  background: var(--tm-bg);
-  color: var(--tm-fg);
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-}
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
 
-h1,
-h2,
-h3,
-h4,
-.tm-display {
-  font-family: var(--tm-font-display);
-  margin: 0;
-}
+  ::-webkit-scrollbar-thumb {
+    @apply bg-tm-border rounded-lg;
+  }
 
-button,
-input,
-textarea,
-select {
-  font-family: inherit;
-}
-
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--tm-border);
-  border-radius: 8px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--tm-fg-subtle);
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-tm-fg-subtle;
+  }
 }

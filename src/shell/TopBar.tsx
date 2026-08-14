@@ -25,59 +25,38 @@ export function TopBar({
 }: TopBarProps) {
   return (
     <header
-      style={{
-        background: gradient
-          ? 'linear-gradient(135deg, var(--tm-primary) 0%, var(--tm-primary-deep) 100%)'
-          : 'var(--tm-surface)',
-        color: gradient ? 'white' : 'var(--tm-fg)',
-        borderBottom: gradient ? 'none' : '1px solid var(--tm-border)',
-        padding: dense ? '14px 20px' : '20px 24px 24px',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
+      className={`relative overflow-hidden ${dense ? 'px-5 py-3.5' : 'px-6 pt-5 pb-6'} ${
+        gradient
+          ? 'bg-[linear-gradient(135deg,var(--tm-primary)_0%,var(--tm-primary-deep)_100%)] text-white'
+          : 'border-b border-tm-border bg-tm-surface text-tm-fg'
+      }`}
     >
       {gradient && (
         <>
           <div
             aria-hidden
-            style={{
-              position: 'absolute',
-              inset: 0,
-              opacity: 0.55,
-              pointerEvents: 'none',
-              background: 'radial-gradient(70% 100% at 90% 0%, rgb(255 255 255 / .15), transparent 60%)',
-            }}
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_100%_at_90%_0%,rgb(255_255_255_/_0.15),transparent_60%)] opacity-55"
           />
           <div
             aria-hidden
-            style={{
-              position: 'absolute',
-              inset: 0,
-              opacity: 0.5,
-              pointerEvents: 'none',
-              background:
-                'radial-gradient(60% 80% at 10% 100%, color-mix(in oklch, var(--tm-primary-deep) 60%, black) 0%, transparent 60%)',
-              mixBlendMode: 'multiply',
-            }}
+            className="pointer-events-none absolute inset-0 opacity-50 mix-blend-multiply bg-[radial-gradient(60%_80%_at_10%_100%,color-mix(in_oklch,var(--tm-primary-deep)_60%,black)_0%,transparent_60%)]"
           />
         </>
       )}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative', zIndex: 1 }}>
+      <div className="relative z-[1] flex items-center gap-3">
         {onMenu && (
-          <div className="tm-topbar-menu">
+          <div className="nav:hidden">
             <IconButton icon={<IconMenu size={22} />} label="Menu" onClick={onMenu} variant={gradient ? 'onDark' : 'light'} />
           </div>
         )}
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="min-w-0 flex-1">
           {subtitle && (
-            <div style={{ fontSize: 12, opacity: gradient ? 0.85 : 0.65, fontWeight: 500, marginBottom: 2 }}>
-              {subtitle}
-            </div>
+            <div className={`mb-0.5 text-tm-sm font-medium ${gradient ? 'opacity-85' : 'opacity-65'}`}>{subtitle}</div>
           )}
-          <div style={{ fontSize: dense ? 18 : 22, fontWeight: 700, letterSpacing: '-0.02em' }}>{title}</div>
+          <div className={`font-bold tracking-[-0.02em] ${dense ? 'text-tm-2xl' : 'text-tm-4xl'}`}>{title}</div>
         </div>
         {onNotifications && (
-          <div style={{ position: 'relative' }}>
+          <div className="relative">
             <IconButton
               icon={<IconBell size={20} />}
               label="Notificações"
@@ -85,32 +64,14 @@ export function TopBar({
               variant={gradient ? 'onDark' : 'light'}
             />
             {notificationCount > 0 && (
-              <span
-                style={{
-                  position: 'absolute',
-                  top: -2,
-                  right: -2,
-                  minWidth: 18,
-                  height: 18,
-                  background: 'oklch(0.65 0.18 25)',
-                  color: 'white',
-                  borderRadius: 999,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '0 5px',
-                  border: '2px solid var(--tm-primary-deep)',
-                }}
-              >
+              <span className="absolute -top-0.5 -right-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-tm-primary-deep bg-[oklch(0.65_0.18_25)] px-[5px] text-[10px] font-bold text-white">
                 {notificationCount}
               </span>
             )}
           </div>
         )}
       </div>
-      {children && <div style={{ position: 'relative', zIndex: 1, marginTop: dense ? 8 : 16 }}>{children}</div>}
+      {children && <div className={`relative z-[1] ${dense ? 'mt-2' : 'mt-4'}`}>{children}</div>}
     </header>
   )
 }

@@ -11,10 +11,10 @@ export interface IconButtonProps {
   style?: CSSProperties
 }
 
-const VARIANTS: Record<IconButtonVariant, CSSProperties> = {
-  ghost: { background: 'transparent', color: 'var(--tm-fg-muted)', border: '1px solid transparent' },
-  light: { background: 'var(--tm-surface)', color: 'var(--tm-fg)', border: '1px solid var(--tm-border)' },
-  onDark: { background: 'rgb(255 255 255 / .14)', color: 'white', border: '1px solid rgb(255 255 255 / .22)' },
+const VARIANTS: Record<IconButtonVariant, string> = {
+  ghost: 'bg-transparent text-tm-fg-muted border border-transparent',
+  light: 'bg-tm-surface text-tm-fg border border-tm-border',
+  onDark: 'bg-[rgb(255_255_255_/_0.14)] text-white border border-[rgb(255_255_255_/_0.22)]',
 }
 
 export function IconButton({ icon, label, onClick, size = 36, variant = 'ghost', style }: IconButtonProps) {
@@ -22,18 +22,8 @@ export function IconButton({ icon, label, onClick, size = 36, variant = 'ghost',
     <button
       onClick={onClick}
       aria-label={label}
-      style={{
-        width: size,
-        height: size,
-        borderRadius: 'var(--tm-radius-sm)',
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-        transition: 'all .18s ease',
-        ...VARIANTS[variant],
-        ...style,
-      }}
+      className={`inline-flex items-center justify-center rounded-tm-sm cursor-pointer transition-all duration-[180ms] ease-in-out ${VARIANTS[variant]}`}
+      style={{ width: size, height: size, ...style }}
     >
       {icon}
     </button>
