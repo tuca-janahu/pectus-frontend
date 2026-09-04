@@ -1,3 +1,5 @@
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+
 export interface AuthUser {
   id: number
   email: string
@@ -30,7 +32,7 @@ async function parseJsonOrThrow<T>(res: Response): Promise<T> {
 }
 
 export function login(email: string, password: string): Promise<AuthSession> {
-  return fetch('/auth/login', {
+  return fetch(`${API_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
@@ -38,13 +40,13 @@ export function login(email: string, password: string): Promise<AuthSession> {
 }
 
 export function me(accessToken: string): Promise<AuthUser> {
-  return fetch('/auth/me', {
+  return fetch(`${API_URL}/auth/me`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   }).then((res) => parseJsonOrThrow<AuthUser>(res))
 }
 
 export function refresh(refreshToken: string): Promise<AuthSession> {
-  return fetch('/auth/refresh', {
+  return fetch(`${API_URL}/auth/refresh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refreshToken }),
@@ -52,7 +54,7 @@ export function refresh(refreshToken: string): Promise<AuthSession> {
 }
 
 export async function logout(refreshToken: string): Promise<void> {
-  await fetch('/auth/logout', {
+  await fetch(`${API_URL}/auth/logout`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refreshToken }),
@@ -81,7 +83,7 @@ export interface CreateAccountResult {
 }
 
 export function createAccount(accessToken: string, input: CreateAccountInput): Promise<CreateAccountResult> {
-  return fetch('/contas', {
+  return fetch(`${API_URL}/contas`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify(input),
@@ -89,7 +91,7 @@ export function createAccount(accessToken: string, input: CreateAccountInput): P
 }
 
 export async function activate(token: string, password: string): Promise<void> {
-  const res = await fetch('/auth/activate', {
+  const res = await fetch(`${API_URL}/auth/activate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token, password }),
