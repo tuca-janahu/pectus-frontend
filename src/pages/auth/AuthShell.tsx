@@ -19,7 +19,7 @@ export function AuthShell({ children, title, subtitle }: { children: ReactNode; 
             <IconStethoscope size={26} />
           </div>
           <div>
-            <div className="text-[20px] font-bold tracking-[-0.01em]">Traque Med</div>
+            <div className="text-[20px] font-bold tracking-[-0.01em]">Pectus</div>
             <div className="text-[12px] opacity-80">Acompanhamento de traqueoplastias</div>
           </div>
         </div>

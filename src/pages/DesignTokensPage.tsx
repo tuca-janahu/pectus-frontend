@@ -60,7 +60,7 @@ export function DesignTokensPage() {
     <div className="flex flex-col gap-8 text-tm-fg">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <div className="text-tm-4xl font-bold tracking-[-0.02em]">Traque Med — Design tokens</div>
+          <div className="text-tm-4xl font-bold tracking-[-0.02em]">Pectus — Design tokens</div>
           <div className="mt-1 text-tm-md text-tm-fg-muted">
             Cor, tipografia e raio portados do protótipo para o design system do front. Página temporária até a tela
             Início real ser implementada.

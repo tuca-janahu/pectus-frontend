@@ -73,7 +73,7 @@ export function ActivatePage() {
   }
 
   return (
-    <AuthShell title="Ative sua conta" subtitle="Defina uma senha para começar a usar o Traque Med">
+    <AuthShell title="Ative sua conta" subtitle="Defina uma senha para começar a usar o Pectus">
       <form onSubmit={submit} className="flex flex-col gap-4">
         <Input
           label="Nova senha"
