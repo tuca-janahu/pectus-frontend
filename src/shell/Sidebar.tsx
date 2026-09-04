@@ -1,6 +1,6 @@
 import { Avatar, IconButton } from '../components/ui'
 import { IconChevronLeft, IconLogOut, IconMenu, IconStethoscope } from '../components/icons'
-import { TM_DOCTOR } from '../data/doctor'
+import { useAuth } from '../auth/AuthContext'
 import { TM_NAV_ITEMS, type RouteId } from './navItems'
 
 export interface SidebarProps {
@@ -11,7 +11,17 @@ export interface SidebarProps {
   onToggle?: () => void
 }
 
+function initialsFromName(name: string): string {
+  const parts = name.trim().split(/\s+/)
+  return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? (parts[parts.length - 1][0] ?? '') : '')).toUpperCase() || '?'
+}
+
 export function Sidebar({ route, onNavigate, onLogout, collapsed = false, onToggle }: SidebarProps) {
+  const { user } = useAuth()
+  const name = user?.nome ?? ''
+  const subtitle = user?.medico?.crm ?? (user?.roles.includes('ADMIN') ? 'Administrador' : user?.email ?? '')
+  const initials = initialsFromName(name)
+
   return (
     <aside
       className={`sticky top-0 flex h-screen flex-col gap-1 border-r border-tm-border bg-tm-surface transition-[padding] duration-200 ease-in-out ${collapsed ? 'p-3' : 'px-4 py-6'}`}
@@ -76,22 +86,22 @@ export function Sidebar({ route, onNavigate, onLogout, collapsed = false, onTogg
         <div className="flex flex-col items-center gap-2.5 pt-2">
           <button
             onClick={() => onNavigate('perfil')}
-            title={TM_DOCTOR.name}
+            title={name}
             className="cursor-pointer border-none bg-transparent p-0"
           >
-            <Avatar initials={TM_DOCTOR.initials} size={38} />
+            <Avatar initials={initials} size={38} />
           </button>
           <IconButton icon={<IconLogOut size={18} />} label="Sair" onClick={onLogout} />
         </div>
       ) : (
         <div className="flex items-center gap-2.5 rounded-xl border border-tm-border bg-tm-surface-2 p-3">
-          <Avatar initials={TM_DOCTOR.initials} size={36} />
+          <Avatar initials={initials} size={36} />
           <div className="min-w-0 flex-1">
             <div className="overflow-hidden text-ellipsis whitespace-nowrap text-tm-base font-semibold text-tm-fg">
-              {TM_DOCTOR.name}
+              {name}
             </div>
             <div className="overflow-hidden text-ellipsis whitespace-nowrap text-tm-xs text-tm-fg-subtle">
-              {TM_DOCTOR.crm}
+              {subtitle}
             </div>
           </div>
           <IconButton icon={<IconLogOut size={18} />} label="Sair" onClick={onLogout} />
