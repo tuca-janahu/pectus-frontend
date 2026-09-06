@@ -101,3 +101,27 @@ export async function activate(token: string, password: string): Promise<void> {
     throw new ApiError(res.status, body?.error ?? 'Erro inesperado')
   }
 }
+
+export async function forgotPassword(email: string): Promise<void> {
+  const res = await fetch(`${API_URL}/auth/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new ApiError(res.status, body?.error ?? 'Erro inesperado')
+  }
+}
+
+export async function resetPassword(token: string, password: string): Promise<void> {
+  const res = await fetch(`${API_URL}/auth/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, password }),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new ApiError(res.status, body?.error ?? 'Erro inesperado')
+  }
+}

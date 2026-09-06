@@ -7,6 +7,7 @@ import { ScreenPlaceholder } from './pages/ScreenPlaceholder'
 import { AdminPage } from './pages/AdminPage'
 import { LoginPage } from './pages/auth/LoginPage'
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage'
+import { ResetPasswordPage } from './pages/auth/ResetPasswordPage'
 import { ActivatePage } from './pages/auth/ActivatePage'
 import { RequireAuth } from './auth/RequireAuth'
 import { useAuth } from './auth/AuthContext'
@@ -69,6 +70,7 @@ function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
+      <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
       <Route path="/ativar-conta" element={<ActivatePage />} />
       <Route
         path="/*"
