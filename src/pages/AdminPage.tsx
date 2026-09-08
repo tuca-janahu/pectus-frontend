@@ -223,8 +223,8 @@ export function AdminPage() {
                 Conta criada para {created.nome} ({created.email})
               </div>
               <div className="mt-1 text-tm-sm text-tm-fg-muted">
-                Nenhum e-mail é enviado automaticamente — copie o link abaixo e envie manualmente. Expira em{' '}
-                {formatExpiry(created.activationExpiresAt)}.
+                Um e-mail de ativação foi enviado para {created.email}. Se precisar, copie o link abaixo e envie
+                manualmente também. Expira em {formatExpiry(created.activationExpiresAt)}.
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <code className="min-w-0 flex-1 truncate rounded-tm-sm border border-tm-border bg-tm-surface-2 px-2.5 py-1.5 text-tm-sm text-tm-fg">
