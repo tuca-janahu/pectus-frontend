@@ -90,6 +90,42 @@ export function createAccount(accessToken: string, input: CreateAccountInput): P
   }).then((res) => parseJsonOrThrow<CreateAccountResult>(res))
 }
 
+export interface ContaResumo {
+  id: number
+  nome: string
+  email: string
+  papeis: { papel: Papel }[]
+  medico: { id: number; crm: string } | null
+  inativadoEm: string | null
+  ativada: boolean
+  criadoEm: string
+}
+
+export function listAccounts(accessToken: string): Promise<{ contas: ContaResumo[] }> {
+  return fetch(`${API_URL}/contas`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  }).then((res) => parseJsonOrThrow<{ contas: ContaResumo[] }>(res))
+}
+
+export interface UpdateAccountInput {
+  nome?: string
+  roles?: Papel[]
+  crm?: string
+  ativo?: boolean
+}
+
+export function updateAccount(
+  accessToken: string,
+  id: number,
+  input: UpdateAccountInput,
+): Promise<{ conta: ContaResumo }> {
+  return fetch(`${API_URL}/contas/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(input),
+  }).then((res) => parseJsonOrThrow<{ conta: ContaResumo }>(res))
+}
+
 export async function activate(token: string, password: string): Promise<void> {
   const res = await fetch(`${API_URL}/auth/activate`, {
     method: 'POST',

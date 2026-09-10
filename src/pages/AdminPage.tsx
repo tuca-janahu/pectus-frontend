@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Avatar, Button, Card, EmptyState, IconButton, Input } from '../components/ui'
 import type { AvatarColor } from '../components/ui'
 import {
@@ -13,18 +13,24 @@ import {
   IconUserPlus,
 } from '../components/icons'
 import { useAuth } from '../auth/AuthContext'
-import { createAccount, ApiError, type Papel } from '../lib/api'
+import {
+  createAccount,
+  listAccounts,
+  updateAccount,
+  ApiError,
+  type ContaResumo,
+  type Papel,
+} from '../lib/api'
 
 type AccountStatus = 'ativo' | 'pendente' | 'inativo'
 
 interface AdminUser {
-  id: string
+  id: number
   nome: string
   email: string
   roles: Papel[]
   crm: string
   status: AccountStatus
-  color: AvatarColor
 }
 
 interface CreatedAccount {
@@ -43,14 +49,6 @@ const ROLE_LABEL: Record<Papel, string> = { ADMIN: 'Administrador', MEDICO: 'Mé
 
 const AVATAR_COLORS: AvatarColor[] = ['sky', 'teal', 'violet', 'rose', 'amber']
 
-// Sem rota de listagem de contas no backend ainda (GET /contas não existe) — lista de exemplo até existir.
-const INITIAL_USERS: AdminUser[] = [
-  { id: 'u1', nome: 'Camila Ferreira', email: 'camila.ferreira@pectus.com', roles: ['ADMIN'], crm: '', status: 'ativo', color: 'sky' },
-  { id: 'u2', nome: 'Rafael Souza', email: 'rafael.souza@pectus.com', roles: ['MEDICO'], crm: 'CRM/AL 23981', status: 'ativo', color: 'violet' },
-  { id: 'u3', nome: 'Helena Pires', email: 'helena.pires@pectus.com', roles: ['MEDICO'], crm: 'CRM/PE 55012', status: 'pendente', color: 'amber' },
-  { id: 'u4', nome: 'Bruno Lima', email: 'bruno.lima@pectus.com', roles: ['MEDICO', 'ADMIN'], crm: 'CRM/AL 41230', status: 'ativo', color: 'teal' },
-]
-
 function initialsFromName(name: string): string {
   const parts = name.trim().split(/\s+/)
   return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? (parts[parts.length - 1][0] ?? '') : '')).toUpperCase() || '?'
@@ -58,6 +56,18 @@ function initialsFromName(name: string): string {
 
 function formatExpiry(iso: string): string {
   return new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+}
+
+function toAdminUser(conta: ContaResumo): AdminUser {
+  const status: AccountStatus = conta.inativadoEm ? 'inativo' : conta.ativada ? 'ativo' : 'pendente'
+  return {
+    id: conta.id,
+    nome: conta.nome,
+    email: conta.email,
+    roles: conta.papeis.map((p) => p.papel),
+    crm: conta.medico?.crm ?? '',
+    status,
+  }
 }
 
 function AccountStatusBadge({ status }: { status: AccountStatus }) {
@@ -85,9 +95,11 @@ export function AdminPage() {
   const { user, accessToken } = useAuth()
   const isAdmin = user?.roles.includes('ADMIN') ?? false
 
-  const [users, setUsers] = useState<AdminUser[]>(INITIAL_USERS)
-  const [showForm, setShowForm] = useState(false)
+  const [users, setUsers] = useState<AdminUser[]>([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
+  const [usersError, setUsersError] = useState('')
 
+  const [showForm, setShowForm] = useState(false)
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [roles, setRoles] = useState<Papel[]>(['MEDICO'])
@@ -96,6 +108,31 @@ export function AdminPage() {
   const [error, setError] = useState('')
   const [created, setCreated] = useState<CreatedAccount | null>(null)
   const [copied, setCopied] = useState(false)
+
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null)
+  const [editNome, setEditNome] = useState('')
+  const [editRoles, setEditRoles] = useState<Papel[]>([])
+  const [editCrm, setEditCrm] = useState('')
+  const [editLoading, setEditLoading] = useState(false)
+  const [editError, setEditError] = useState('')
+
+  const loadUsers = useCallback(async () => {
+    if (!accessToken) return
+    setLoadingUsers(true)
+    setUsersError('')
+    try {
+      const result = await listAccounts(accessToken)
+      setUsers(result.contas.map(toAdminUser))
+    } catch (err) {
+      setUsersError(err instanceof ApiError ? err.message : 'Não foi possível carregar a equipe.')
+    } finally {
+      setLoadingUsers(false)
+    }
+  }, [accessToken])
+
+  useEffect(() => {
+    if (isAdmin) loadUsers()
+  }, [isAdmin, loadUsers])
 
   if (!isAdmin) {
     return (
@@ -119,6 +156,11 @@ export function AdminPage() {
     setRoles(['MEDICO'])
     setCrm('')
     setError('')
+  }
+
+  const openForm = () => {
+    setEditingUser(null)
+    setShowForm(true)
   }
 
   const cancelForm = () => {
@@ -153,21 +195,10 @@ export function AdminPage() {
         activationLink: `${window.location.origin}/ativar-conta?token=${result.activationToken}`,
         activationExpiresAt: result.activationExpiresAt,
       })
-      setUsers((current) => [
-        {
-          id: `novo-${Date.now()}`,
-          nome: result.conta.nome,
-          email: result.conta.email,
-          roles,
-          crm: roles.includes('MEDICO') ? crm : '',
-          status: 'pendente',
-          color: AVATAR_COLORS[current.length % AVATAR_COLORS.length],
-        },
-        ...current,
-      ])
       setCopied(false)
       setShowForm(false)
       resetForm()
+      await loadUsers()
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Não foi possível criar a conta. Tente novamente.')
     } finally {
@@ -183,6 +214,65 @@ export function AdminPage() {
     })
   }
 
+  const openEdit = (target: AdminUser) => {
+    setShowForm(false)
+    setEditingUser(target)
+    setEditNome(target.nome)
+    setEditRoles(target.roles)
+    setEditCrm(target.crm)
+    setEditError('')
+  }
+
+  const closeEdit = () => setEditingUser(null)
+
+  const toggleEditRole = (role: Papel) => {
+    setEditRoles((current) =>
+      current.includes(role) ? current.filter((r) => r !== role) : [...current, role],
+    )
+  }
+
+  const submitEdit = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!accessToken || !editingUser) return
+    setEditError('')
+    if (editRoles.length === 0) {
+      setEditError('Selecione ao menos uma função.')
+      return
+    }
+
+    setEditLoading(true)
+    try {
+      await updateAccount(accessToken, editingUser.id, {
+        nome: editNome,
+        roles: editRoles,
+        crm: editRoles.includes('MEDICO') ? editCrm : undefined,
+      })
+      setEditingUser(null)
+      await loadUsers()
+    } catch (err) {
+      setEditError(err instanceof ApiError ? err.message : 'Não foi possível salvar as alterações.')
+    } finally {
+      setEditLoading(false)
+    }
+  }
+
+  const toggleActive = async () => {
+    if (!accessToken || !editingUser) return
+    setEditError('')
+    setEditLoading(true)
+    try {
+      await updateAccount(accessToken, editingUser.id, { ativo: editingUser.status === 'inativo' })
+      setEditingUser(null)
+      await loadUsers()
+    } catch (err) {
+      setEditError(err instanceof ApiError ? err.message : 'Não foi possível alterar o status da conta.')
+    } finally {
+      setEditLoading(false)
+    }
+  }
+
+  const isSelf = editingUser !== null && user?.id === editingUser.id
+
   const stats = [
     { label: 'Contas', value: users.length },
     { label: 'Ativas', value: users.filter((u) => u.status === 'ativo').length },
@@ -197,7 +287,7 @@ export function AdminPage() {
           <p className="mt-1 text-tm-md text-tm-fg-muted">Contas e acessos da clínica</p>
         </div>
         {!showForm && (
-          <Button onClick={() => setShowForm(true)} icon={<IconUserPlus size={16} />}>
+          <Button onClick={openForm} icon={<IconUserPlus size={16} />}>
             Novo usuário
           </Button>
         )}
@@ -319,35 +409,131 @@ export function AdminPage() {
         </Card>
       )}
 
+      {editingUser && (
+        <Card padded={false} style={{ overflow: 'hidden', borderColor: 'color-mix(in oklch, var(--tm-primary) 35%, var(--tm-border))' }}>
+          <div className="flex items-center gap-3 border-b border-tm-border bg-[color-mix(in_oklch,var(--tm-primary)_7%,var(--tm-surface))] px-5 py-4">
+            <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[11px] bg-[linear-gradient(135deg,var(--tm-primary),var(--tm-primary-deep))] text-white">
+              <IconSettings size={20} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-tm-lg font-bold tracking-[-0.01em] text-tm-fg">Editar usuário</div>
+              <div className="text-tm-sm text-tm-fg-muted">{editingUser.email}</div>
+            </div>
+            <IconButton icon={<IconClose size={20} />} label="Cancelar" onClick={closeEdit} />
+          </div>
+
+          <form onSubmit={submitEdit} className="flex flex-col gap-4 p-5">
+            <Input
+              label="Nome completo"
+              value={editNome}
+              onChange={(e) => setEditNome(e.target.value)}
+              placeholder="Nome do profissional"
+              icon={<IconUser size={18} />}
+              required
+            />
+
+            <div className="flex flex-col gap-1.5">
+              <span className="text-tm-base font-semibold text-tm-fg">Função</span>
+              <div className="flex flex-col gap-2">
+                {ROLE_OPTIONS.map((role) => (
+                  <label
+                    key={role.value}
+                    className="flex cursor-pointer items-center gap-3 rounded-tm-input border border-tm-border bg-tm-surface-2 px-3.5 py-2.5"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={editRoles.includes(role.value)}
+                      onChange={() => toggleEditRole(role.value)}
+                      className="accent-tm-primary"
+                    />
+                    <div className="min-w-0">
+                      <div className="text-tm-md font-semibold text-tm-fg">{role.label}</div>
+                      <div className="text-tm-sm text-tm-fg-muted">{role.sub}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {editRoles.includes('MEDICO') && (
+              <Input
+                label="CRM / Registro"
+                value={editCrm}
+                onChange={(e) => setEditCrm(e.target.value)}
+                placeholder="CRM/UF 00000"
+                icon={<IconActivity size={18} />}
+                required
+              />
+            )}
+
+            {editError && <div className="text-tm-sm text-tm-error-text">{editError}</div>}
+
+            <div className="flex flex-wrap items-center justify-between gap-2.5 border-t border-tm-border pt-4">
+              <Button
+                type="button"
+                variant="danger"
+                disabled={editLoading || isSelf}
+                title={isSelf ? 'Você não pode desativar sua própria conta.' : undefined}
+                onClick={toggleActive}
+              >
+                {editingUser.status === 'inativo' ? 'Reativar conta' : 'Desativar conta'}
+              </Button>
+              <div className="flex gap-2.5">
+                <Button type="button" variant="secondary" onClick={closeEdit}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={editLoading} icon={<IconCheck size={16} />}>
+                  {editLoading ? 'Salvando...' : 'Salvar alterações'}
+                </Button>
+              </div>
+            </div>
+          </form>
+        </Card>
+      )}
+
       <Card padded={false} style={{ overflow: 'hidden' }}>
         <div className="border-b border-tm-border px-[18px] py-3.5">
           <div className="text-tm-md font-bold tracking-[-0.01em] text-tm-fg">Equipe</div>
-          <div className="text-tm-sm text-tm-fg-muted">{users.length} contas no sistema</div>
+          <div className="text-tm-sm text-tm-fg-muted">
+            {loadingUsers ? 'Carregando...' : `${users.length} contas no sistema`}
+          </div>
         </div>
-        <div>
-          {users.map((u, i) => (
-            <div
-              key={u.id}
-              className={`flex items-center gap-3.5 px-[18px] py-3.5 ${i < users.length - 1 ? 'border-b border-tm-border' : ''}`}
-            >
-              <Avatar initials={initialsFromName(u.nome)} color={u.color} size={42} />
-              <div className="min-w-0 flex-1">
-                <div className="overflow-hidden text-ellipsis whitespace-nowrap text-tm-md font-semibold text-tm-fg">
-                  {u.nome}
+        {usersError ? (
+          <div className="flex flex-col items-start gap-2 p-[18px]">
+            <p className="text-tm-sm text-tm-error-text">{usersError}</p>
+            <Button type="button" size="sm" variant="secondary" onClick={loadUsers}>
+              Tentar novamente
+            </Button>
+          </div>
+        ) : (
+          <div>
+            {users.map((u, i) => (
+              <div
+                key={u.id}
+                className={`flex items-center gap-3.5 px-[18px] py-3.5 ${i < users.length - 1 ? 'border-b border-tm-border' : ''}`}
+              >
+                <Avatar initials={initialsFromName(u.nome)} color={AVATAR_COLORS[i % AVATAR_COLORS.length]} size={42} />
+                <div className="min-w-0 flex-1">
+                  <div className="overflow-hidden text-ellipsis whitespace-nowrap text-tm-md font-semibold text-tm-fg">
+                    {u.nome}
+                  </div>
+                  <div className="overflow-hidden text-ellipsis whitespace-nowrap text-tm-sm text-tm-fg-muted">
+                    {u.email}
+                    {u.crm ? ` · ${u.crm}` : ''}
+                  </div>
                 </div>
-                <div className="overflow-hidden text-ellipsis whitespace-nowrap text-tm-sm text-tm-fg-muted">
-                  {u.email}
-                  {u.crm ? ` · ${u.crm}` : ''}
-                </div>
+                <span className="hidden shrink-0 whitespace-nowrap rounded-full bg-tm-surface-2 px-3 py-1 text-tm-xs font-semibold text-tm-fg-muted sm:inline-block">
+                  {u.roles.map((r) => ROLE_LABEL[r]).join(' + ')}
+                </span>
+                <AccountStatusBadge status={u.status} />
+                <IconButton icon={<IconSettings size={18} />} label="Gerenciar" onClick={() => openEdit(u)} />
               </div>
-              <span className="hidden shrink-0 whitespace-nowrap rounded-full bg-tm-surface-2 px-3 py-1 text-tm-xs font-semibold text-tm-fg-muted sm:inline-block">
-                {u.roles.map((r) => ROLE_LABEL[r]).join(' + ')}
-              </span>
-              <AccountStatusBadge status={u.status} />
-              <IconButton icon={<IconSettings size={18} />} label="Gerenciar" />
-            </div>
-          ))}
-        </div>
+            ))}
+            {users.length === 0 && !loadingUsers && (
+              <div className="p-[18px] text-tm-sm text-tm-fg-muted">Nenhuma conta cadastrada ainda.</div>
+            )}
+          </div>
+        )}
       </Card>
 
       <div className="flex items-start gap-3 rounded-tm-card border border-tm-border bg-tm-surface-2 p-4">
