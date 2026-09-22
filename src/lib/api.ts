@@ -39,6 +39,14 @@ export function login(email: string, password: string): Promise<AuthSession> {
   }).then((res) => parseJsonOrThrow<AuthSession>(res))
 }
 
+export function loginWithGoogle(code: string): Promise<AuthSession> {
+  return fetch(`${API_URL}/auth/google`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+  }).then((res) => parseJsonOrThrow<AuthSession>(res))
+}
+
 export function me(accessToken: string): Promise<AuthUser> {
   return fetch(`${API_URL}/auth/me`, {
     headers: { Authorization: `Bearer ${accessToken}` },

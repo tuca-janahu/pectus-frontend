@@ -1,33 +1,53 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { Button, Input } from '../../components/ui'
 import { IconEye, IconEyeOff, IconGoogle, IconLock, IconMail, IconShield } from '../../components/icons'
 import { useAuth } from '../../auth/AuthContext'
 import { ApiError } from '../../lib/api'
 import { AuthShell } from './AuthShell'
+import { useGoogleLogin } from '@react-oauth/google'
 
 interface LoginLocationState {
   from?: { pathname: string }
 }
 
-function GoogleAuthButton() {
+interface GoogleAuthButtonProps {
+  onSuccess: (code: string) => Promise<void>
+  onError: (msg: string) => void
+  disabled?: boolean
+}
+
+function GoogleAuthButton({ onSuccess, onError, disabled }: GoogleAuthButtonProps) {
+  const [loading, setLoading] = useState(false)
+
+  const loginWithGoogle = useGoogleLogin({
+    flow: 'auth-code',
+    onSuccess: async (codeResponse) => {
+      setLoading(true)
+      try {
+        await onSuccess(codeResponse.code)
+      } finally {
+        setLoading(false)
+      }
+    },
+    onError: () => onError('Autenticação com o Google cancelada ou indisponível.'),
+  })
+
   return (
     <button
       type="button"
-      disabled
-      aria-disabled="true"
-      title="Login com Google em breve"
-      className="flex h-12 w-full cursor-not-allowed items-center justify-center gap-3 rounded-tm-button border-[1.5px] border-tm-border bg-tm-surface text-[15px] font-semibold tracking-[-0.005em] text-tm-fg-subtle opacity-60"
+      onClick={() => loginWithGoogle()}
+      disabled={disabled || loading}
+      className="flex h-12 w-full items-center justify-center gap-3 rounded-tm-button border-[1.5px] border-tm-border bg-tm-surface text-[15px] font-semibold tracking-[-0.005em] text-tm-fg transition-colors hover:bg-tm-surface-2 disabled:cursor-not-allowed disabled:opacity-60"
     >
       <IconGoogle size={20} />
-      Entrar com o Google
-      <span className="rounded-full bg-tm-surface-2 px-2 py-0.5 text-[11px] font-medium">em breve</span>
+      {loading ? 'Conectando...' : 'Entrar com o Google'}
     </button>
   )
 }
 
 export function LoginPage() {
-  const { status, login } = useAuth()
+  const { status, login, loginWithGoogle } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -43,7 +63,7 @@ export function LoginPage() {
     return <Navigate to={from?.pathname ?? '/'} replace />
   }
 
-  const submit = async (e: FormEvent) => {
+  const submit = async (e: React.SyntheticEvent) => {
     e.preventDefault()
     setFormError('')
     setLoading(true)
@@ -58,9 +78,25 @@ export function LoginPage() {
     }
   }
 
+  const handleGoogleSuccess = async (code: string) => {
+    setFormError('')
+    try {
+      await loginWithGoogle(code)
+      const from = (location.state as LoginLocationState | null)?.from
+      navigate(from?.pathname ?? '/', { replace: true })
+    } catch (err) {
+      setFormError(err instanceof ApiError ? err.message : 'Falha na autenticação via Google.')
+    }
+  }
+
   return (
     <AuthShell title="Entre na sua conta" subtitle="Acesse seu painel de fichas epicríticas">
       <form onSubmit={submit} className="flex flex-col gap-4">
+        {formError && (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-2.5 text-center text-sm text-red-600">
+            {formError}
+          </div>
+        )}
         <Input
           label="E-mail"
           type="email"
@@ -114,7 +150,10 @@ export function LoginPage() {
           <span className="text-tm-sm text-tm-fg-subtle">ou</span>
           <div className="h-px flex-1 bg-tm-border" />
         </div>
-        <GoogleAuthButton />
+        <GoogleAuthButton 
+          onSuccess={handleGoogleSuccess}
+          onError={(msg) => setFormError(msg)}
+          disabled={loading}/>
         <div className="flex items-center justify-center gap-1.5 text-tm-sm text-tm-fg-subtle">
           <IconShield size={14} style={{ color: 'oklch(0.58 0.13 155)' }} />
           Acesso autenticado e protegido
