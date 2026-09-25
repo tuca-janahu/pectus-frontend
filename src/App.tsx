@@ -11,6 +11,8 @@ import { ResetPasswordPage } from './pages/auth/ResetPasswordPage'
 import { ActivatePage } from './pages/auth/ActivatePage'
 import { RequireAuth } from './auth/RequireAuth'
 import { useAuth } from './auth/AuthContext'
+import { PacientesPage } from './pages/pacientes/PacientesPage'
+import { IconSearch, IconFilter } from './components/icons'
 
 function routeIdFromPathname(pathname: string): RouteId {
   return TM_NAV_ITEMS.find((item) => item.path === pathname)?.id ?? 'home'
@@ -21,9 +23,12 @@ function AuthenticatedApp() {
   const navigate = useNavigate()
   const { logout } = useAuth()
   const [notifications, setNotifications] = useState(TM_NOTIFICATIONS)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [pacientesCount, setPacientesCount] = useState<number | null>(null)
 
   const route = routeIdFromPathname(location.pathname)
   const activeItem = TM_NAV_ITEMS.find((item) => item.id === route)!
+  const isPacientesRoute = route === 'busca'
 
   return (
     <AppShell
@@ -37,10 +42,37 @@ function AuthenticatedApp() {
         navigate('/login')
       }}
       title={activeItem.label}
-      subtitle={activeItem.subtitle}
+      subtitle={
+        isPacientesRoute
+          ? pacientesCount !== null
+            ? `${pacientesCount} ${pacientesCount === 1 ? 'cadastrado' : 'cadastrados'}`
+            : 'Carregando...'
+          : activeItem.subtitle
+      }
       notifications={notifications}
       onMarkNotification={(id) =>
         setNotifications((arr) => arr.map((n) => (n.id === id ? { ...n, unread: false } : n)))
+      }
+      topBarContent={
+        isPacientesRoute ? (
+          <div className="flex gap-3 pt-2 pb-1">
+            <div className="relative flex-1">
+              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center text-white/70">
+                <IconSearch size={20} />
+              </span>
+              <input
+                type="text"
+                placeholder="Buscar por nome..."
+                className="w-full rounded-tm-input border border-white/20 bg-white/10 py-3 pl-12 pr-4 font-tm-body text-white placeholder-white/70 transition-all focus:bg-white/20 focus:outline-none"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <button className="flex shrink-0 items-center justify-center rounded-tm-button border border-white/20 bg-white/10 px-4 py-3 transition-all hover:bg-white/20">
+              <IconFilter size={20} className="text-white" />
+            </button>
+          </div>
+        ) : undefined
       }
     >
       <Routes>
@@ -53,6 +85,11 @@ function AuthenticatedApp() {
                 <DesignTokensPage />
               ) : item.id === 'admin' ? (
                 <AdminPage />
+              ) : item.id === 'busca' ? (
+                <PacientesPage 
+                  searchTerm={searchTerm} 
+                  onCountChange={setPacientesCount} 
+                />
               ) : (
                 <ScreenPlaceholder item={item} />
               )

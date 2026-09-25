@@ -16,6 +16,7 @@ export interface AppShellProps {
   subtitle?: string
   notifications: Notification[]
   onMarkNotification: (id: string) => void
+  topBarContent?: ReactNode // <-- 1. Adicionamos a propriedade aqui
   children?: ReactNode
 }
 
@@ -27,6 +28,7 @@ export function AppShell({
   subtitle,
   notifications,
   onMarkNotification,
+  topBarContent, // <-- 2. Recebemos a propriedade aqui
   children,
 }: AppShellProps) {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSED_STORAGE_KEY) === '1')
@@ -77,7 +79,11 @@ export function AppShell({
           onMenu={() => setSidebarOpen(true)}
           onNotifications={() => setNotifOpen(true)}
           notificationCount={unreadCount}
-        />
+        >
+          {/* 3. Repassamos o conteúdo para dentro da TopBar */}
+          {topBarContent} 
+        </TopBar>
+        
         <div className="p-[clamp(16px,4vw,32px)]">{children}</div>
       </main>
 
