@@ -21,6 +21,7 @@ import {
   type ContaResumo,
   type Papel,
 } from '../lib/api'
+import { toastError, toastSuccess } from '../lib/toast'
 
 type AccountStatus = 'ativo' | 'pendente' | 'inativo'
 
@@ -198,9 +199,12 @@ export function AdminPage() {
       setCopied(false)
       setShowForm(false)
       resetForm()
+      toastSuccess(`Conta criada para ${result.conta.nome}.`)
       await loadUsers()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Não foi possível criar a conta. Tente novamente.')
+      const message = err instanceof ApiError ? err.message : 'Não foi possível criar a conta. Tente novamente.'
+      setError(message)
+      toastError(message)
     } finally {
       setLoading(false)
     }
@@ -248,9 +252,12 @@ export function AdminPage() {
         crm: editRoles.includes('MEDICO') ? editCrm : undefined,
       })
       setEditingUser(null)
+      toastSuccess('Alterações salvas com sucesso.')
       await loadUsers()
     } catch (err) {
-      setEditError(err instanceof ApiError ? err.message : 'Não foi possível salvar as alterações.')
+      const message = err instanceof ApiError ? err.message : 'Não foi possível salvar as alterações.'
+      setEditError(message)
+      toastError(message)
     } finally {
       setEditLoading(false)
     }
@@ -260,12 +267,16 @@ export function AdminPage() {
     if (!accessToken || !editingUser) return
     setEditError('')
     setEditLoading(true)
+    const reativando = editingUser.status === 'inativo'
     try {
-      await updateAccount(accessToken, editingUser.id, { ativo: editingUser.status === 'inativo' })
+      await updateAccount(accessToken, editingUser.id, { ativo: reativando })
       setEditingUser(null)
+      toastSuccess(reativando ? 'Conta reativada com sucesso.' : 'Conta desativada com sucesso.')
       await loadUsers()
     } catch (err) {
-      setEditError(err instanceof ApiError ? err.message : 'Não foi possível alterar o status da conta.')
+      const message = err instanceof ApiError ? err.message : 'Não foi possível alterar o status da conta.'
+      setEditError(message)
+      toastError(message)
     } finally {
       setEditLoading(false)
     }

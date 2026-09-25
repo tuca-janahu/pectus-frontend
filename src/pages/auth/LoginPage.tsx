@@ -4,6 +4,7 @@ import { Button, Input } from '../../components/ui'
 import { IconEye, IconEyeOff, IconGoogle, IconLock, IconMail, IconShield } from '../../components/icons'
 import { useAuth } from '../../auth/AuthContext'
 import { ApiError } from '../../lib/api'
+import { toastError, toastSuccess } from '../../lib/toast'
 import { AuthShell } from './AuthShell'
 import { useGoogleLogin } from '@react-oauth/google'
 
@@ -69,10 +70,13 @@ export function LoginPage() {
     setLoading(true)
     try {
       await login(email, password, remember)
+      toastSuccess('Login realizado com sucesso!')
       const from = (location.state as LoginLocationState | null)?.from
       navigate(from?.pathname ?? '/', { replace: true })
     } catch (err) {
-      setFormError(err instanceof ApiError ? err.message : 'Não foi possível entrar. Tente novamente.')
+      const message = err instanceof ApiError ? err.message : 'Não foi possível entrar. Tente novamente.'
+      setFormError(message)
+      toastError(message)
     } finally {
       setLoading(false)
     }
@@ -82,10 +86,13 @@ export function LoginPage() {
     setFormError('')
     try {
       await loginWithGoogle(code)
+      toastSuccess('Login realizado com sucesso!')
       const from = (location.state as LoginLocationState | null)?.from
       navigate(from?.pathname ?? '/', { replace: true })
     } catch (err) {
-      setFormError(err instanceof ApiError ? err.message : 'Falha na autenticação via Google.')
+      const message = err instanceof ApiError ? err.message : 'Falha na autenticação via Google.'
+      setFormError(message)
+      toastError(message)
     }
   }
 

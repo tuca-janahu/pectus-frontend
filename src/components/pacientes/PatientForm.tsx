@@ -13,6 +13,7 @@ import {
 import { AddressSelector, type AddressSelectorValue } from './AddressSelector'
 import { useAuth } from '../../auth/AuthContext'
 import { createPaciente, ApiError } from '../../lib/api'
+import { toastError, toastSuccess } from '../../lib/toast'
 
 interface PatientFormProps {
   onCancel: () => void
@@ -78,10 +79,13 @@ export function PatientForm({ onCancel, onSuccess }: PatientFormProps) {
         municipioId: enderecoNacional.municipioId as number,
       })
 
+      toastSuccess(`Paciente ${nome} cadastrado com sucesso.`)
       if (onSuccess) onSuccess()
       else onCancel()
     } catch (err) {
-      setSubmitError(err instanceof ApiError ? err.message : 'Erro de conexão com o servidor.')
+      const message = err instanceof ApiError ? err.message : 'Erro de conexão com o servidor.'
+      setSubmitError(message)
+      toastError(message)
     } finally {
       setLoading(false)
     }
