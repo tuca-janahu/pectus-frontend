@@ -14,9 +14,9 @@ const BASE = {
   strokeLinejoin: 'round' as const,
 }
 
-export function Icon({ size = 20, style, children, ...rest }: IconProps & { children: React.ReactNode }) {
+export function Icon({ size = 20, style, className, children, ...rest }: IconProps & { children: React.ReactNode }) {
   return (
-    <svg {...BASE} {...rest} className="shrink-0" style={{ width: size, height: size, ...style }}>
+    <svg {...BASE} {...rest} className={`shrink-0 ${className ?? ''}`} style={{ width: size, height: size, ...style }}>
       {children}
     </svg>
   )

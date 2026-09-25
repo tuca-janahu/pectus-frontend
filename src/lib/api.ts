@@ -169,3 +169,67 @@ export async function resetPassword(token: string, password: string): Promise<vo
     throw new ApiError(res.status, body?.error ?? 'Erro inesperado')
   }
 }
+
+export interface Estado {
+  codigo: number
+  sigla: string
+  nome: string
+}
+
+export interface Municipio {
+  codigo: number
+  nome: string
+  estadoCodigo: number
+  pertenceRmBelem: boolean
+}
+
+export function listEstados(accessToken: string): Promise<{ estados: Estado[] }> {
+  return fetch(`${API_URL}/localidades/estados`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  }).then((res) => parseJsonOrThrow<{ estados: Estado[] }>(res))
+}
+
+export function listMunicipios(accessToken: string, estadoCodigo: number): Promise<{ municipios: Municipio[] }> {
+  return fetch(`${API_URL}/localidades/estados/${estadoCodigo}/municipios`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  }).then((res) => parseJsonOrThrow<{ municipios: Municipio[] }>(res))
+}
+
+export interface PacienteResumo {
+  id: number
+  nome: string
+  cpf: string | null
+  dataNascimento: string
+  genero: string
+  municipio: { codigo: number; nome: string; estado: { sigla: string; nome: string } } | null
+  telefones: { telefone: string }[]
+  inativadoEm: string | null
+  criadoEm: string
+}
+
+export interface CreatePacienteInput {
+  nome: string
+  cpf?: string
+  dataNascimento: string
+  genero: string
+  municipioId?: number
+  telefones?: string[]
+}
+
+export function listPacientes(accessToken: string, nome?: string): Promise<{ pacientes: PacienteResumo[] }> {
+  const query = nome ? `?nome=${encodeURIComponent(nome)}` : ''
+  return fetch(`${API_URL}/pacientes${query}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  }).then((res) => parseJsonOrThrow<{ pacientes: PacienteResumo[] }>(res))
+}
+
+export function createPaciente(
+  accessToken: string,
+  input: CreatePacienteInput,
+): Promise<{ paciente: PacienteResumo }> {
+  return fetch(`${API_URL}/pacientes`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(input),
+  }).then((res) => parseJsonOrThrow<{ paciente: PacienteResumo }>(res))
+}

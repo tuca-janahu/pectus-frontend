@@ -2,20 +2,21 @@ import { useState, type SyntheticEvent } from 'react'
 import { Card, Input, Button, IconButton, Dropdown } from '../ui'
 import { InputCpf } from '../ui/InputCpf'
 import { InputPhone } from '../ui/InputPhone'
-import { 
-  IconUserPlus, 
-  IconClose, 
-  IconUser, 
-  IconActivity, 
-  IconCheck, 
-  IconMapPin 
+import {
+  IconUserPlus,
+  IconClose,
+  IconUser,
+  IconActivity,
+  IconCheck,
+  IconMapPin
 } from '../icons'
 import { AddressSelector, type AddressSelectorValue } from './AddressSelector'
 import { useAuth } from '../../auth/AuthContext'
+import { createPaciente, ApiError } from '../../lib/api'
 
 interface PatientFormProps {
   onCancel: () => void
-  onSuccess?: () => void 
+  onSuccess?: () => void
 }
 
 export function PatientForm({ onCancel, onSuccess }: PatientFormProps) {
@@ -26,7 +27,7 @@ export function PatientForm({ onCancel, onSuccess }: PatientFormProps) {
   const [telefone, setTelefone] = useState('')
   const [dataNascimento, setDataNascimento] = useState('')
   const [genero, setGenero] = useState('')
-  
+
   const [enderecoNacional, setEnderecoNacional] = useState<AddressSelectorValue>({
     estadoId: '',
     estadoSigla: '',
@@ -45,7 +46,7 @@ export function PatientForm({ onCancel, onSuccess }: PatientFormProps) {
 
   const submit = async (e: SyntheticEvent) => {
     e.preventDefault()
-    
+
     if (!accessToken) {
       setSubmitError('Sessão expirada. Faça login novamente.')
       return
@@ -65,43 +66,31 @@ export function PatientForm({ onCancel, onSuccess }: PatientFormProps) {
     setSubmitError('')
 
     try {
-      const payload = {
+      const cpfLimpo = documento.replace(/\D/g, '')
+      const telefoneLimpo = telefone.replace(/\D/g, '')
+
+      await createPaciente(accessToken, {
         nome,
-        documento: documento.replace(/\D/g, ''),
-        telefone: telefone.replace(/\D/g, ''),
+        cpf: cpfLimpo || undefined,
+        telefones: telefoneLimpo ? [telefoneLimpo] : [],
         dataNascimento: new Date(dataNascimento).toISOString(),
         genero,
-        municipioId: enderecoNacional.municipioId
-      }
-
-      const res = await fetch('http://localhost:3000/pacientes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
-        },
-        body: JSON.stringify(payload)
+        municipioId: enderecoNacional.municipioId as number,
       })
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}))
-        throw new Error(errorData.error || 'Ocorreu um erro ao cadastrar o paciente.')
-      }
 
       if (onSuccess) onSuccess()
       else onCancel()
-
-    } catch (err: any) {
-      setSubmitError(err.message || 'Erro de conexão com o servidor.')
+    } catch (err) {
+      setSubmitError(err instanceof ApiError ? err.message : 'Erro de conexão com o servidor.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="animate-in fade-in duration-300">
-      <Card 
-        padded={false} 
+    <div>
+      <Card
+        padded={false}
         style={{ borderColor: 'color-mix(in oklch, var(--tm-primary) 35%, var(--tm-border))' }}
       >
         <div className="flex items-center gap-3 border-b border-tm-border bg-[color-mix(in_oklch,var(--tm-primary)_7%,var(--tm-surface))] px-5 py-4">
@@ -128,7 +117,7 @@ export function PatientForm({ onCancel, onSuccess }: PatientFormProps) {
                 disabled={loading}
               />
             </div>
-            
+
             <InputCpf
               label="Documento (CPF)"
               value={documento}
@@ -177,17 +166,15 @@ export function PatientForm({ onCancel, onSuccess }: PatientFormProps) {
               </span>
             </div>
 
-            <div className="animate-in fade-in slide-in-from-top-2">
-              <AddressSelector
-                value={enderecoNacional}
-                onChange={setEnderecoNacional}
-                disabled={loading}
-              />
-            </div>
+            <AddressSelector
+              value={enderecoNacional}
+              onChange={setEnderecoNacional}
+              disabled={loading}
+            />
           </div>
 
           {submitError && (
-            <div className="rounded-tm-sm bg-tm-danger-bg p-3 text-tm-sm font-medium text-tm-danger-fg animate-in fade-in">
+            <div className="rounded-tm-sm bg-tm-danger-bg p-3 text-tm-sm font-medium text-tm-danger-fg">
               {submitError}
             </div>
           )}
@@ -200,7 +187,7 @@ export function PatientForm({ onCancel, onSuccess }: PatientFormProps) {
               {loading ? 'Salvando...' : 'Criar paciente'}
             </Button>
           </div>
-          
+
         </form>
       </Card>
     </div>

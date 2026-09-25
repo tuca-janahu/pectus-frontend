@@ -3,17 +3,7 @@ import { Dropdown } from '../ui'
 import type { DropdownOption } from '../ui'
 import { IconMapPin } from '../icons'
 import { useAuth } from '../../auth/AuthContext'
-
-export interface LocalidadeEstado {
-  codigo: number
-  sigla: string
-  nome: string
-}
-
-export interface LocalidadeMunicipio {
-  codigo: number
-  nome: string
-}
+import { listEstados, listMunicipios, ApiError, type Estado, type Municipio } from '../../lib/api'
 
 export interface AddressSelectorValue {
   estadoId: number | ''
@@ -30,9 +20,9 @@ interface AddressSelectorProps {
 
 export function AddressSelector({ value, onChange, disabled }: AddressSelectorProps) {
   const { accessToken } = useAuth()
-  
-  const [estados, setEstados] = useState<LocalidadeEstado[]>([])
-  const [municipios, setMunicipios] = useState<LocalidadeMunicipio[]>([])
+
+  const [estados, setEstados] = useState<Estado[]>([])
+  const [municipios, setMunicipios] = useState<Municipio[]>([])
   const [loadingEstados, setLoadingEstados] = useState(false)
   const [loadingMunicipios, setLoadingMunicipios] = useState(false)
   const [erro, setErro] = useState('')
@@ -47,23 +37,10 @@ export function AddressSelector({ value, onChange, disabled }: AddressSelectorPr
       setLoadingEstados(true)
       setErro('')
       try {
-        const res = await fetch('http://localhost:3000/localidades/estados', {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          }
-        })
-        
-        if (!res.ok) throw new Error('Falha ao obter lista de estados.')
-        
-        const json = await res.json()
-        const data: LocalidadeEstado[] = json.estados || json
-
-        if (active && Array.isArray(data)) {
-          setEstados(data.sort((a, b) => a.nome.localeCompare(b.nome)))
-        }
+        const { estados: data } = await listEstados(accessToken!)
+        if (active) setEstados([...data].sort((a, b) => a.nome.localeCompare(b.nome)))
       } catch (err) {
-        if (active) setErro('Não foi possível carregar os estados.')
+        if (active) setErro(err instanceof ApiError ? err.message : 'Não foi possível carregar os estados.')
       } finally {
         if (active) setLoadingEstados(false)
       }
@@ -89,23 +66,10 @@ export function AddressSelector({ value, onChange, disabled }: AddressSelectorPr
       setLoadingMunicipios(true)
       setErro('')
       try {
-        const res = await fetch(`http://localhost:3000/localidades/estados/${value.estadoId}/municipios`, {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          }
-        })
-        
-        if (!res.ok) throw new Error('Falha ao obter municípios.')
-        
-        const json = await res.json()
-        const data: LocalidadeMunicipio[] = json.municipios || json
-
-        if (active && Array.isArray(data)) {
-          setMunicipios(data.sort((a, b) => a.nome.localeCompare(b.nome)))
-        }
+        const { municipios: data } = await listMunicipios(accessToken!, value.estadoId as number)
+        if (active) setMunicipios([...data].sort((a, b) => a.nome.localeCompare(b.nome)))
       } catch (err) {
-        if (active) setErro('Não foi possível carregar os municípios deste estado.')
+        if (active) setErro(err instanceof ApiError ? err.message : 'Não foi possível carregar os municípios deste estado.')
       } finally {
         if (active) setLoadingMunicipios(false)
       }
@@ -118,7 +82,6 @@ export function AddressSelector({ value, onChange, disabled }: AddressSelectorPr
     }
   }, [value.estadoId, accessToken])
 
-  // Handlers para usar o 'codigo'
   const handleEstadoChange = (val: string | number) => {
     const selectedCodigo = Number(val)
     const selectedEstado = estados.find((uf) => uf.codigo === selectedCodigo)
@@ -133,7 +96,7 @@ export function AddressSelector({ value, onChange, disabled }: AddressSelectorPr
 
   const handleMunicipioChange = (val: string | number) => {
     const selectedCodigo = Number(val)
-    const selectedMun = municipios.find((m) => (m.codigo || (m as any).id) === selectedCodigo)
+    const selectedMun = municipios.find((m) => m.codigo === selectedCodigo)
 
     onChange({
       ...value,
@@ -148,7 +111,7 @@ export function AddressSelector({ value, onChange, disabled }: AddressSelectorPr
   }))
 
   const municipioOptions: DropdownOption[] = municipios.map((m) => ({
-    value: m.codigo || (m as any).id,
+    value: m.codigo,
     label: m.nome,
   }))
 
@@ -175,8 +138,8 @@ export function AddressSelector({ value, onChange, disabled }: AddressSelectorPr
             !value.estadoId
               ? 'Selecione um estado antes...'
               : loadingMunicipios
-              ? 'Carregando municípios...'
-              : 'Selecione a cidade...'
+                ? 'Carregando municípios...'
+                : 'Selecione a cidade...'
           }
           disabled={disabled || !value.estadoId || loadingMunicipios}
           required
