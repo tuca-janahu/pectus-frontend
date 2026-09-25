@@ -5,6 +5,7 @@ import { TM_NOTIFICATIONS } from './data/notifications'
 import { DesignTokensPage } from './pages/DesignTokensPage'
 import { ScreenPlaceholder } from './pages/ScreenPlaceholder'
 import { AdminPage } from './pages/AdminPage'
+import { LogsPage } from './pages/LogsPage'
 import { LoginPage } from './pages/auth/LoginPage'
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage'
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage'
@@ -53,6 +54,8 @@ function AuthenticatedApp() {
                 <DesignTokensPage />
               ) : item.id === 'admin' ? (
                 <AdminPage />
+              ) : item.id === 'logs' ? (
+                <LogsPage />
               ) : (
                 <ScreenPlaceholder item={item} />
               )

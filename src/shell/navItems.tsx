@@ -1,7 +1,16 @@
 import type { ReactNode } from 'react'
-import { IconCalendar, IconChart, IconHome, IconList, IconShield, IconUser, IconUsers } from '../components/icons'
+import {
+  IconCalendar,
+  IconChart,
+  IconClock,
+  IconHome,
+  IconList,
+  IconShield,
+  IconUser,
+  IconUsers,
+} from '../components/icons'
 
-export type RouteId = 'home' | 'dashboard' | 'fichas' | 'calendario' | 'busca' | 'admin' | 'perfil'
+export type RouteId = 'home' | 'dashboard' | 'fichas' | 'calendario' | 'busca' | 'admin' | 'logs' | 'perfil'
 
 export interface NavItem {
   id: RouteId
@@ -36,5 +45,12 @@ export const TM_NAV_ITEMS: NavItem[] = [
     subtitle: 'Buscar e gerenciar pacientes',
   },
   { id: 'admin', label: 'Admin', path: '/admin', icon: <IconShield size={20} />, subtitle: 'Equipe e permissões' },
+  {
+    id: 'logs',
+    label: 'Logs',
+    path: '/logs',
+    icon: <IconClock size={20} />,
+    subtitle: 'Histórico de auditoria do sistema',
+  },
   { id: 'perfil', label: 'Perfil', path: '/perfil', icon: <IconUser size={20} /> },
 ]
