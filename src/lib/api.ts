@@ -233,3 +233,47 @@ export function createPaciente(
     body: JSON.stringify(input),
   }).then((res) => parseJsonOrThrow<{ paciente: PacienteResumo }>(res))
 }
+
+export type ModuloAuditoria = 'AUTENTICACAO' | 'USUARIOS' | 'PACIENTES'
+
+export interface LogResumo {
+  id: number
+  modulo: ModuloAuditoria
+  tipo: string
+  descricao: string
+  atorId: number | null
+  ator: { id: number; nome: string; email: string } | null
+  metadata: unknown
+  criadoEm: string
+}
+
+export interface ListLogsFiltro {
+  de?: string
+  ate?: string
+  modulo?: ModuloAuditoria
+  busca?: string
+  offset?: number
+}
+
+function buildQuery(params: Record<string, string | undefined>): string {
+  const qs = new URLSearchParams()
+  for (const [k, v] of Object.entries(params)) if (v) qs.set(k, v)
+  const s = qs.toString()
+  return s ? `?${s}` : ''
+}
+
+export function listLogs(
+  accessToken: string,
+  filtro: ListLogsFiltro = {},
+): Promise<{ items: LogResumo[]; total: number }> {
+  const query = buildQuery({
+    de: filtro.de,
+    ate: filtro.ate,
+    modulo: filtro.modulo,
+    busca: filtro.busca,
+    offset: filtro.offset ? String(filtro.offset) : undefined,
+  })
+  return fetch(`${API_URL}/logs${query}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  }).then((res) => parseJsonOrThrow<{ items: LogResumo[]; total: number }>(res))
+}
