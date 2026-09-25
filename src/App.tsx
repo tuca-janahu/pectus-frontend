@@ -9,6 +9,7 @@ import { LoginPage } from './pages/auth/LoginPage'
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage'
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage'
 import { ActivatePage } from './pages/auth/ActivatePage'
+import { CreditsPage } from './pages/CreditsPage'
 import { RequireAuth } from './auth/RequireAuth'
 import { useAuth } from './auth/AuthContext'
 
@@ -72,6 +73,7 @@ function App() {
       <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
       <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
       <Route path="/ativar-conta" element={<ActivatePage />} />
+      <Route path="/creditos" element={<CreditsPage />} />
       <Route
         path="/*"
         element={

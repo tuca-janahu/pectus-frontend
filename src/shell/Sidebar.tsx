@@ -1,5 +1,6 @@
+import { useNavigate } from 'react-router-dom'
 import { Avatar, IconButton } from '../components/ui'
-import { IconChevronLeft, IconLogOut, IconMenu, IconStethoscope } from '../components/icons'
+import { IconChevronLeft, IconInfo, IconLogOut, IconMenu, IconStethoscope } from '../components/icons'
 import { useAuth } from '../auth/AuthContext'
 import { TM_NAV_ITEMS, type RouteId } from './navItems'
 
@@ -18,6 +19,7 @@ function initialsFromName(name: string): string {
 
 export function Sidebar({ route, onNavigate, onLogout, collapsed = false, onToggle }: SidebarProps) {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const name = user?.nome ?? ''
   const subtitle = user?.medico?.crm ?? (user?.roles.includes('ADMIN') ? 'Administrador' : user?.email ?? '')
   const initials = initialsFromName(name)
@@ -91,20 +93,29 @@ export function Sidebar({ route, onNavigate, onLogout, collapsed = false, onTogg
           >
             <Avatar initials={initials} size={38} />
           </button>
+          <IconButton icon={<IconInfo size={16} />} label="Créditos" onClick={() => navigate('/creditos')} />
           <IconButton icon={<IconLogOut size={18} />} label="Sair" onClick={onLogout} />
         </div>
       ) : (
-        <div className="flex items-center gap-2.5 rounded-xl border border-tm-border bg-tm-surface-2 p-3">
-          <Avatar initials={initials} size={36} />
-          <div className="min-w-0 flex-1">
-            <div className="overflow-hidden text-ellipsis whitespace-nowrap text-tm-base font-semibold text-tm-fg">
-              {name}
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2.5 rounded-xl border border-tm-border bg-tm-surface-2 p-3">
+            <Avatar initials={initials} size={36} />
+            <div className="min-w-0 flex-1">
+              <div className="overflow-hidden text-ellipsis whitespace-nowrap text-tm-base font-semibold text-tm-fg">
+                {name}
+              </div>
+              <div className="overflow-hidden text-ellipsis whitespace-nowrap text-tm-xs text-tm-fg-subtle">
+                {subtitle}
+              </div>
             </div>
-            <div className="overflow-hidden text-ellipsis whitespace-nowrap text-tm-xs text-tm-fg-subtle">
-              {subtitle}
-            </div>
+            <IconButton icon={<IconLogOut size={18} />} label="Sair" onClick={onLogout} />
           </div>
-          <IconButton icon={<IconLogOut size={18} />} label="Sair" onClick={onLogout} />
+          <button
+            onClick={() => navigate('/creditos')}
+            className="cursor-pointer self-center border-none bg-transparent p-1 text-tm-2xs font-medium text-tm-fg-subtle underline-offset-2 hover:text-tm-fg-muted hover:underline"
+          >
+            Créditos
+          </button>
         </div>
       )}
     </aside>
