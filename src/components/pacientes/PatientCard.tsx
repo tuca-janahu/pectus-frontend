@@ -7,13 +7,14 @@ interface PatientCardProps {
   fichas: number
   iniciais: string
   avatarColor?: AvatarColor
+  fotoUrl?: string | null
 }
 
-export function PatientCard({ nome, idade, fichas, iniciais, avatarColor = 'sky' }: PatientCardProps) {
+export function PatientCard({ nome, idade, fichas, iniciais, avatarColor = 'sky', fotoUrl }: PatientCardProps) {
   return (
     <div className="flex items-center justify-between p-4 bg-tm-surface rounded-tm-card shadow-tm-card hover:shadow-tm-card-hover border border-tm-border cursor-pointer transition-all">
       <div className="flex items-center gap-4">
-        <Avatar initials={iniciais} color={avatarColor} size={48} />
+        <Avatar initials={iniciais} color={avatarColor} size={48} src={fotoUrl || undefined} />
 
         <div>
           <h3 className="font-tm-body font-semibold text-tm-fg text-tm-base">{nome}</h3>

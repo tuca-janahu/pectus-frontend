@@ -6,6 +6,7 @@ import { PatientCard } from '../../components/pacientes/PatientCard'
 import { PatientForm } from '../../components/pacientes/PatientForm'
 import { useAuth } from '../../auth/AuthContext'
 import { listPacientes, ApiError, type PacienteResumo } from '../../lib/api'
+import { toastError } from '../../lib/toast'
 
 export interface PacientesPageProps {
   searchTerm?: string
@@ -32,7 +33,9 @@ export function PacientesPage({ searchTerm = '', onCountChange }: PacientesPageP
       setPacientes(lista)
       onCountChange?.(lista.length)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Não foi possível carregar os pacientes.')
+      const message = err instanceof ApiError ? err.message : 'Não foi possível carregar os pacientes.'
+      setError(message)
+      toastError(message)
     } finally {
       setLoading(false)
     }
@@ -115,6 +118,7 @@ export function PacientesPage({ searchTerm = '', onCountChange }: PacientesPageP
               fichas={0}
               iniciais={obterIniciais(paciente.nome)}
               avatarColor={AVATAR_COLORS[i % AVATAR_COLORS.length]}
+              fotoUrl={paciente.fotoUrl}
             />
           ))}
         </div>

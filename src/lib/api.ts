@@ -203,6 +203,7 @@ export interface PacienteResumo {
   genero: string
   municipio: { codigo: number; nome: string; estado: { sigla: string; nome: string } } | null
   telefones: { telefone: string }[]
+  fotoUrl: string | null
   inativadoEm: string | null
   criadoEm: string
 }
@@ -231,6 +232,20 @@ export function createPaciente(
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify(input),
+  }).then((res) => parseJsonOrThrow<{ paciente: PacienteResumo }>(res))
+}
+
+export function uploadPacienteFoto(
+  accessToken: string,
+  pacienteId: number,
+  foto: File,
+): Promise<{ paciente: PacienteResumo }> {
+  const formData = new FormData()
+  formData.append('foto', foto)
+  return fetch(`${API_URL}/pacientes/${pacienteId}/foto`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: formData,
   }).then((res) => parseJsonOrThrow<{ paciente: PacienteResumo }>(res))
 }
 

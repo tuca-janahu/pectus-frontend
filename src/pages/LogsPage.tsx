@@ -3,6 +3,7 @@ import { Button, Card, EmptyState, Input, Select } from '../components/ui'
 import { IconClock, IconSearch, IconShield } from '../components/icons'
 import { useAuth } from '../auth/AuthContext'
 import { listLogs, ApiError, type LogResumo, type ModuloAuditoria } from '../lib/api'
+import { toastError } from '../lib/toast'
 
 const LIMIT = 50
 
@@ -77,7 +78,9 @@ export function LogsPage() {
         setTotal(result.total)
         setOffset(nextOffset)
       } catch (err) {
-        setError(err instanceof ApiError ? err.message : 'Não foi possível carregar os logs.')
+        const message = err instanceof ApiError ? err.message : 'Não foi possível carregar os logs.'
+        setError(message)
+        toastError(message)
       } finally {
         setLoading(false)
         setLoadingMore(false)

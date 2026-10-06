@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { Button, Input } from '../../components/ui'
 import { IconCheck, IconEye, IconEyeOff, IconLock } from '../../components/icons'
 import { resetPassword, ApiError } from '../../lib/api'
+import { toastError } from '../../lib/toast'
 import { AuthShell } from './AuthShell'
 
 const MIN_PASSWORD_LENGTH = 6
@@ -66,7 +67,9 @@ export function ResetPasswordPage() {
       await resetPassword(token, password)
       setDone(true)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Não foi possível redefinir a senha. Tente novamente.')
+      const message = err instanceof ApiError ? err.message : 'Não foi possível redefinir a senha. Tente novamente.'
+      setError(message)
+      toastError(message)
     } finally {
       setLoading(false)
     }

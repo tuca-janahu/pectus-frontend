@@ -4,6 +4,7 @@ import type { DropdownOption } from '../ui'
 import { IconMapPin } from '../icons'
 import { useAuth } from '../../auth/AuthContext'
 import { listEstados, listMunicipios, ApiError, type Estado, type Municipio } from '../../lib/api'
+import { toastError } from '../../lib/toast'
 
 export interface AddressSelectorValue {
   estadoId: number | ''
@@ -40,7 +41,11 @@ export function AddressSelector({ value, onChange, disabled }: AddressSelectorPr
         const { estados: data } = await listEstados(accessToken!)
         if (active) setEstados([...data].sort((a, b) => a.nome.localeCompare(b.nome)))
       } catch (err) {
-        if (active) setErro(err instanceof ApiError ? err.message : 'Não foi possível carregar os estados.')
+        if (active) {
+          const message = err instanceof ApiError ? err.message : 'Não foi possível carregar os estados.'
+          setErro(message)
+          toastError(message)
+        }
       } finally {
         if (active) setLoadingEstados(false)
       }
@@ -69,7 +74,11 @@ export function AddressSelector({ value, onChange, disabled }: AddressSelectorPr
         const { municipios: data } = await listMunicipios(accessToken!, value.estadoId as number)
         if (active) setMunicipios([...data].sort((a, b) => a.nome.localeCompare(b.nome)))
       } catch (err) {
-        if (active) setErro(err instanceof ApiError ? err.message : 'Não foi possível carregar os municípios deste estado.')
+        if (active) {
+          const message = err instanceof ApiError ? err.message : 'Não foi possível carregar os municípios deste estado.'
+          setErro(message)
+          toastError(message)
+        }
       } finally {
         if (active) setLoadingMunicipios(false)
       }

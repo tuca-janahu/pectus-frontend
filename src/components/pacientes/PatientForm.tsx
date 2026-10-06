@@ -1,5 +1,5 @@
-import { useState, type SyntheticEvent } from 'react'
-import { Card, Input, Button, IconButton, Dropdown } from '../ui'
+import { useEffect, useRef, useState, type ChangeEvent, type SyntheticEvent } from 'react'
+import { Avatar, Card, Input, Button, IconButton, Dropdown } from '../ui'
 import { InputCpf } from '../ui/InputCpf'
 import { InputPhone } from '../ui/InputPhone'
 import {
@@ -8,12 +8,23 @@ import {
   IconUser,
   IconActivity,
   IconCheck,
-  IconMapPin
+  IconMapPin,
+  IconCamera,
 } from '../icons'
 import { AddressSelector, type AddressSelectorValue } from './AddressSelector'
 import { useAuth } from '../../auth/AuthContext'
-import { createPaciente, ApiError } from '../../lib/api'
+import { createPaciente, uploadPacienteFoto, ApiError } from '../../lib/api'
 import { toastError, toastSuccess } from '../../lib/toast'
+
+const FOTO_MIME_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp']
+const FOTO_MAX_BYTES = 8 * 1024 * 1024
+
+function obterIniciais(nome: string): string {
+  const partes = nome.trim().split(/\s+/).filter(Boolean)
+  if (partes.length >= 2) return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase()
+  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase()
+  return '?'
+}
 
 interface PatientFormProps {
   onCancel: () => void
@@ -38,6 +49,35 @@ export function PatientForm({ onCancel, onSuccess }: PatientFormProps) {
 
   const [loading, setLoading] = useState(false)
   const [submitError, setSubmitError] = useState('')
+
+  const [fotoFile, setFotoFile] = useState<File | null>(null)
+  const [fotoPreviewUrl, setFotoPreviewUrl] = useState<string | null>(null)
+  const fotoInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    return () => {
+      if (fotoPreviewUrl) URL.revokeObjectURL(fotoPreviewUrl)
+    }
+  }, [fotoPreviewUrl])
+
+  const selecionarFoto = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+
+    if (!FOTO_MIME_PERMITIDOS.includes(file.type)) {
+      toastError('Formato de imagem não suportado. Use JPEG, PNG ou WEBP.')
+      return
+    }
+    if (file.size > FOTO_MAX_BYTES) {
+      toastError('Imagem muito grande. O tamanho máximo é 8MB.')
+      return
+    }
+
+    if (fotoPreviewUrl) URL.revokeObjectURL(fotoPreviewUrl)
+    setFotoFile(file)
+    setFotoPreviewUrl(URL.createObjectURL(file))
+  }
 
   const generoOptions = [
     { value: 'MASCULINO', label: 'Masculino' },
@@ -70,7 +110,7 @@ export function PatientForm({ onCancel, onSuccess }: PatientFormProps) {
       const cpfLimpo = documento.replace(/\D/g, '')
       const telefoneLimpo = telefone.replace(/\D/g, '')
 
-      await createPaciente(accessToken, {
+      const { paciente } = await createPaciente(accessToken, {
         nome,
         cpf: cpfLimpo || undefined,
         telefones: telefoneLimpo ? [telefoneLimpo] : [],
@@ -80,6 +120,15 @@ export function PatientForm({ onCancel, onSuccess }: PatientFormProps) {
       })
 
       toastSuccess(`Paciente ${nome} cadastrado com sucesso.`)
+
+      if (fotoFile) {
+        try {
+          await uploadPacienteFoto(accessToken, paciente.id, fotoFile)
+        } catch {
+          toastError('Paciente criado, mas não foi possível enviar a foto.')
+        }
+      }
+
       if (onSuccess) onSuccess()
       else onCancel()
     } catch (err) {
@@ -109,6 +158,33 @@ export function PatientForm({ onCancel, onSuccess }: PatientFormProps) {
         </div>
 
         <form onSubmit={submit} className="flex flex-col gap-6 p-5">
+          <div className="flex items-center gap-4">
+            <div className="relative shrink-0">
+              <Avatar size={64} src={fotoPreviewUrl ?? undefined} initials={obterIniciais(nome || '?')} />
+              <button
+                type="button"
+                onClick={() => fotoInputRef.current?.click()}
+                disabled={loading}
+                className="absolute -bottom-1 -right-1 inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-tm-surface bg-[linear-gradient(135deg,var(--tm-primary),var(--tm-primary-deep))] text-white shadow-tm-card disabled:cursor-not-allowed disabled:opacity-60"
+                aria-label="Selecionar foto do paciente"
+              >
+                <IconCamera size={14} />
+              </button>
+              <input
+                ref={fotoInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={selecionarFoto}
+                disabled={loading}
+              />
+            </div>
+            <div className="min-w-0">
+              <span className="block text-tm-base font-semibold text-tm-fg">Foto do paciente</span>
+              <span className="block text-tm-sm text-tm-fg-muted">Opcional. JPEG, PNG ou WEBP, até 8MB.</span>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
               <Input
