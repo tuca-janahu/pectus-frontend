@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '../../components/ui'
 import type { AvatarColor } from '../../components/ui'
 import { IconPlus, IconChevronRight } from '../../components/icons'
@@ -16,6 +17,7 @@ export interface PacientesPageProps {
 const AVATAR_COLORS: AvatarColor[] = ['sky', 'teal', 'violet', 'rose', 'amber']
 
 export function PacientesPage({ searchTerm = '', onCountChange }: PacientesPageProps) {
+  const navigate = useNavigate()
   const { accessToken } = useAuth()
   const [showForm, setShowForm] = useState(false)
 
@@ -119,6 +121,7 @@ export function PacientesPage({ searchTerm = '', onCountChange }: PacientesPageP
               iniciais={obterIniciais(paciente.nome)}
               avatarColor={AVATAR_COLORS[i % AVATAR_COLORS.length]}
               fotoUrl={paciente.fotoUrl}
+              onClick={() => navigate(`/pacientes/${paciente.id}`)}
             />
           ))}
         </div>

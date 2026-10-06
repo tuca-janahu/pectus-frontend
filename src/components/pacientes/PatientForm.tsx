@@ -10,10 +10,11 @@ import {
   IconCheck,
   IconMapPin,
   IconCamera,
+  IconEdit,
 } from '../icons'
 import { AddressSelector, type AddressSelectorValue } from './AddressSelector'
 import { useAuth } from '../../auth/AuthContext'
-import { createPaciente, uploadPacienteFoto, ApiError } from '../../lib/api'
+import { createPaciente, updatePaciente, uploadPacienteFoto, ApiError, type PacienteResumo } from '../../lib/api'
 import { toastError, toastSuccess } from '../../lib/toast'
 
 const FOTO_MIME_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp']
@@ -27,36 +28,42 @@ function obterIniciais(nome: string): string {
 }
 
 interface PatientFormProps {
+  paciente?: PacienteResumo // Adicionado para suportar edição
   onCancel: () => void
   onSuccess?: () => void
 }
 
-export function PatientForm({ onCancel, onSuccess }: PatientFormProps) {
+export function PatientForm({ paciente, onCancel, onSuccess }: PatientFormProps) {
   const { accessToken } = useAuth()
+  const isEditing = !!paciente
 
-  const [nome, setNome] = useState('')
-  const [documento, setDocumento] = useState('')
-  const [telefone, setTelefone] = useState('')
-  const [dataNascimento, setDataNascimento] = useState('')
-  const [genero, setGenero] = useState('')
+  const [nome, setNome] = useState(paciente?.nome || '')
+  const [documento, setDocumento] = useState(paciente?.cpf || '')
+  const [telefone, setTelefone] = useState(paciente?.telefones?.[0]?.telefone || '')
+  // O input type="date" espera o formato YYYY-MM-DD
+  const [dataNascimento, setDataNascimento] = useState(paciente?.dataNascimento?.split('T')[0] || '')
+  const [genero, setGenero] = useState(paciente?.genero || '')
 
   const [enderecoNacional, setEnderecoNacional] = useState<AddressSelectorValue>({
-    estadoId: '',
-    estadoSigla: '',
-    municipioId: '',
-    municipioNome: '',
+    estadoId: '', 
+    estadoSigla: paciente?.municipio?.estado?.sigla || '',
+    municipioId: paciente?.municipio?.codigo || '',
+    municipioNome: paciente?.municipio?.nome || '',
   })
 
   const [loading, setLoading] = useState(false)
   const [submitError, setSubmitError] = useState('')
 
   const [fotoFile, setFotoFile] = useState<File | null>(null)
-  const [fotoPreviewUrl, setFotoPreviewUrl] = useState<string | null>(null)
+  const [fotoPreviewUrl, setFotoPreviewUrl] = useState<string | null>(paciente?.fotoUrl || null)
   const fotoInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     return () => {
-      if (fotoPreviewUrl) URL.revokeObjectURL(fotoPreviewUrl)
+      // Limpa o preview apenas se for um object URL (novo upload), ignorando URLs normais vindas do backend
+      if (fotoPreviewUrl && fotoPreviewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(fotoPreviewUrl)
+      }
     }
   }, [fotoPreviewUrl])
 
@@ -74,7 +81,9 @@ export function PatientForm({ onCancel, onSuccess }: PatientFormProps) {
       return
     }
 
-    if (fotoPreviewUrl) URL.revokeObjectURL(fotoPreviewUrl)
+    if (fotoPreviewUrl && fotoPreviewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(fotoPreviewUrl)
+    }
     setFotoFile(file)
     setFotoPreviewUrl(URL.createObjectURL(file))
   }
@@ -109,23 +118,37 @@ export function PatientForm({ onCancel, onSuccess }: PatientFormProps) {
     try {
       const cpfLimpo = documento.replace(/\D/g, '')
       const telefoneLimpo = telefone.replace(/\D/g, '')
+      
+      let pacienteId = paciente?.id
 
-      const { paciente } = await createPaciente(accessToken, {
-        nome,
-        cpf: cpfLimpo || undefined,
-        telefones: telefoneLimpo ? [telefoneLimpo] : [],
-        dataNascimento: new Date(dataNascimento).toISOString(),
-        genero,
-        municipioId: enderecoNacional.municipioId as number,
-      })
+      if (isEditing && pacienteId) {
+        await updatePaciente(accessToken, pacienteId, {
+          nome,
+          cpf: cpfLimpo || undefined,
+          telefones: telefoneLimpo ? [telefoneLimpo] : [],
+          dataNascimento: new Date(dataNascimento).toISOString(),
+          genero,
+          municipioId: enderecoNacional.municipioId as number,
+        })
+        toastSuccess(`Paciente atualizado com sucesso.`)
+      } else {
+        const { paciente: novo } = await createPaciente(accessToken, {
+          nome,
+          cpf: cpfLimpo || undefined,
+          telefones: telefoneLimpo ? [telefoneLimpo] : [],
+          dataNascimento: new Date(dataNascimento).toISOString(),
+          genero,
+          municipioId: enderecoNacional.municipioId as number,
+        })
+        pacienteId = novo.id
+        toastSuccess(`Paciente cadastrado com sucesso.`)
+      }
 
-      toastSuccess(`Paciente ${nome} cadastrado com sucesso.`)
-
-      if (fotoFile) {
+      if (fotoFile && pacienteId) {
         try {
-          await uploadPacienteFoto(accessToken, paciente.id, fotoFile)
+          await uploadPacienteFoto(accessToken, pacienteId, fotoFile)
         } catch {
-          toastError('Paciente criado, mas não foi possível enviar a foto.')
+          toastError('Dados salvos, mas não foi possível enviar a foto.')
         }
       }
 
@@ -142,17 +165,18 @@ export function PatientForm({ onCancel, onSuccess }: PatientFormProps) {
 
   return (
     <div>
-      <Card
-        padded={false}
-        style={{ borderColor: 'color-mix(in oklch, var(--tm-primary) 35%, var(--tm-border))' }}
-      >
+      <Card padded={false} style={{ borderColor: 'color-mix(in oklch, var(--tm-primary) 35%, var(--tm-border))' }}>
         <div className="flex items-center gap-3 border-b border-tm-border bg-[color-mix(in_oklch,var(--tm-primary)_7%,var(--tm-surface))] px-5 py-4">
           <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[11px] bg-[linear-gradient(135deg,var(--tm-primary),var(--tm-primary-deep))] text-white">
-            <IconUserPlus size={20} />
+            {isEditing ? <IconEdit size={20} /> : <IconUserPlus size={20} />}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-tm-lg font-bold tracking-[-0.01em] text-tm-fg">Novo paciente</div>
-            <div className="text-tm-sm text-tm-fg-muted">Cadastre os dados e a localização do paciente.</div>
+            <div className="text-tm-lg font-bold tracking-[-0.01em] text-tm-fg">
+              {isEditing ? 'Editar paciente' : 'Novo paciente'}
+            </div>
+            <div className="text-tm-sm text-tm-fg-muted">
+              {isEditing ? 'Atualize os dados e a localização do paciente.' : 'Cadastre os dados e a localização do paciente.'}
+            </div>
           </div>
           <IconButton icon={<IconClose size={20} />} label="Cancelar" onClick={onCancel} />
         </div>
@@ -264,10 +288,9 @@ export function PatientForm({ onCancel, onSuccess }: PatientFormProps) {
               Cancelar
             </Button>
             <Button type="submit" icon={<IconCheck size={16} />} disabled={loading}>
-              {loading ? 'Salvando...' : 'Criar paciente'}
+              {loading ? 'Salvando...' : (isEditing ? 'Atualizar paciente' : 'Criar paciente')}
             </Button>
           </div>
-
         </form>
       </Card>
     </div>
