@@ -56,7 +56,7 @@ export function AppShell({
     <div
       className={`grid min-h-dvh grid-cols-1 grid-rows-[1fr_auto] nav:grid-rows-[1fr] ${navCols} transition-[grid-template-columns] duration-200 ease-in-out`}
     >
-      <aside className="hidden nav:flex">
+      <aside className="hidden nav:flex flex-col">
         <Sidebar route={route} onNavigate={onNavigate} onLogout={onLogout} collapsed={collapsed} onToggle={toggleCollapsed} />
       </aside>
 
