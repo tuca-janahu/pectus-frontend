@@ -6,6 +6,9 @@ export interface AuthUser {
   nome: string
   roles: string[]
   medico: { crm: string } | null
+  // Ausente nas respostas de /auth/login e /auth/google (a foto só é resolvida
+  // em /auth/me, que já faz a consulta extra de qualquer forma) — por isso opcional.
+  fotoUrl?: string | null
 }
 
 export interface AuthSession {
@@ -51,6 +54,30 @@ export function me(accessToken: string): Promise<AuthUser> {
   return fetch(`${API_URL}/auth/me`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   }).then((res) => parseJsonOrThrow<AuthUser>(res))
+}
+
+// Shape de /contas/me/foto, que reaproveita ContaResumo (admin), não AuthUser
+// (self) — papeis em vez de roles. O front não usa esse retorno como fonte de
+// verdade: depois do upload sempre chama refreshUser() pra buscar /auth/me de novo.
+export interface ContaFotoResumo {
+  id: number
+  nome: string
+  email: string
+  papeis: { papel: string }[]
+  medico: { id: number; crm: string } | null
+  ativada: boolean
+  criadoEm: string
+  fotoUrl: string | null
+}
+
+export function uploadContaFoto(accessToken: string, foto: File): Promise<{ conta: ContaFotoResumo }> {
+  const formData = new FormData()
+  formData.append('foto', foto)
+  return fetch(`${API_URL}/contas/me/foto`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: formData,
+  }).then((res) => parseJsonOrThrow<{ conta: ContaFotoResumo }>(res))
 }
 
 export function refresh(refreshToken: string): Promise<AuthSession> {

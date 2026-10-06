@@ -89,13 +89,13 @@ export function Sidebar({ route, onNavigate, onLogout, collapsed = false, onTogg
             title={name}
             className="cursor-pointer border-none bg-transparent p-0"
           >
-            <Avatar initials={initials} size={38} />
+            <Avatar initials={initials} size={38} src={user?.fotoUrl ?? undefined} />
           </button>
           <IconButton icon={<IconLogOut size={18} />} label="Sair" onClick={onLogout} />
         </div>
       ) : (
         <div className="flex items-center gap-2.5 rounded-xl border border-tm-border bg-tm-surface-2 p-3">
-          <Avatar initials={initials} size={36} />
+          <Avatar initials={initials} size={36} src={user?.fotoUrl ?? undefined} />
           <div className="min-w-0 flex-1">
             <div className="overflow-hidden text-ellipsis whitespace-nowrap text-tm-base font-semibold text-tm-fg">
               {name}

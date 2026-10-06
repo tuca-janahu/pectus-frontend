@@ -12,6 +12,7 @@ interface AuthContextValue {
   login: (email: string, password: string, remember: boolean) => Promise<void>
   loginWithGoogle: (code: string) => Promise<void>
   logout: () => void
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -79,9 +80,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('unauthenticated')
   }, [])
 
+  const refreshUser = useCallback(async () => {
+    if (!accessToken) return
+    const user = await api.me(accessToken)
+    setUser(user)
+  }, [accessToken])
+
   const value = useMemo(
-    () => ({ status, user, accessToken, login, logout, loginWithGoogle }),
-    [status, user, accessToken, login, logout, loginWithGoogle],
+    () => ({ status, user, accessToken, login, logout, loginWithGoogle, refreshUser }),
+    [status, user, accessToken, login, logout, loginWithGoogle, refreshUser],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
