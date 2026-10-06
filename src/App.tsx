@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation, useNavigate, matchPath } from 'react-router-dom'
 import { AppShell, TM_NAV_ITEMS, type RouteId } from './shell'
 import { TM_NOTIFICATIONS } from './data/notifications'
 import { DesignTokensPage } from './pages/DesignTokensPage'
@@ -13,9 +13,11 @@ import { ActivatePage } from './pages/auth/ActivatePage'
 import { RequireAuth } from './auth/RequireAuth'
 import { useAuth } from './auth/AuthContext'
 import { PacientesPage } from './pages/pacientes/PacientesPage'
+import { PacienteDetailsPage } from './pages/pacientes/PacienteDetailsPage'
 import { IconSearch, IconFilter } from './components/icons'
 
 function routeIdFromPathname(pathname: string): RouteId {
+  if (matchPath('/pacientes/:id', pathname)) return 'busca'
   return TM_NAV_ITEMS.find((item) => item.path === pathname)?.id ?? 'home'
 }
 
@@ -27,9 +29,10 @@ function AuthenticatedApp() {
   const [searchTerm, setSearchTerm] = useState('')
   const [pacientesCount, setPacientesCount] = useState<number | null>(null)
 
+  const isDetailsRoute = Boolean(matchPath('/pacientes/:id', location.pathname))
   const route = routeIdFromPathname(location.pathname)
-  const activeItem = TM_NAV_ITEMS.find((item) => item.id === route)!
-  const isPacientesRoute = route === 'busca'
+  const activeItem = TM_NAV_ITEMS.find((item) => item.id === route) ?? TM_NAV_ITEMS[0]
+  const isPacientesRoute = route === 'busca' && !isDetailsRoute
 
   return (
     <AppShell
@@ -42,13 +45,15 @@ function AuthenticatedApp() {
         logout()
         navigate('/login')
       }}
-      title={activeItem.label}
+      title={isDetailsRoute ? 'Prontuário' : activeItem.label}
       subtitle={
-        isPacientesRoute
-          ? pacientesCount !== null
-            ? `${pacientesCount} ${pacientesCount === 1 ? 'cadastrado' : 'cadastrados'}`
-            : 'Carregando...'
-          : activeItem.subtitle
+        isDetailsRoute
+          ? 'Visualização detalhada do paciente'
+          : isPacientesRoute
+            ? pacientesCount !== null
+              ? `${pacientesCount} ${pacientesCount === 1 ? 'cadastrado' : 'cadastrados'}`
+              : 'Carregando...'
+            : activeItem.subtitle
       }
       notifications={notifications}
       onMarkNotification={(id) =>
@@ -99,6 +104,10 @@ function AuthenticatedApp() {
             }
           />
         ))}
+
+        {/* Rota do Prontuário */}
+        <Route path="/pacientes/:id" element={<PacienteDetailsPage />} />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>

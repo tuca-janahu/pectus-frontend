@@ -8,16 +8,36 @@ interface PatientCardProps {
   iniciais: string
   avatarColor?: AvatarColor
   fotoUrl?: string | null
+  onClick?: () => void
 }
 
-export function PatientCard({ nome, idade, fichas, iniciais, avatarColor = 'sky', fotoUrl }: PatientCardProps) {
+export function PatientCard({
+  nome,
+  idade,
+  fichas,
+  iniciais,
+  avatarColor = 'sky',
+  fotoUrl,
+  onClick,
+}: PatientCardProps) {
   return (
-    <div className="flex items-center justify-between p-4 bg-tm-surface rounded-tm-card shadow-tm-card hover:shadow-tm-card-hover border border-tm-border cursor-pointer transition-all">
+    <div
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onClick?.()
+        }
+      }}
+      className="flex cursor-pointer items-center justify-between border border-tm-border bg-tm-surface p-4 shadow-tm-card transition-all hover:shadow-tm-card-hover rounded-tm-card"
+    >
       <div className="flex items-center gap-4">
         <Avatar initials={iniciais} color={avatarColor} size={48} src={fotoUrl || undefined} />
 
         <div>
-          <h3 className="font-tm-body font-semibold text-tm-fg text-tm-base">{nome}</h3>
+          <h3 className="font-tm-body text-tm-base font-semibold text-tm-fg">{nome}</h3>
           <p className="font-tm-body text-tm-sm text-tm-fg-muted">
             {idade} anos • {fichas} {fichas === 1 ? 'ficha' : 'fichas'}
           </p>
