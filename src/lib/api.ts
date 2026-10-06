@@ -262,6 +262,12 @@ export interface LogResumo {
   criadoEm: string
 }
 
+export function getPaciente(accessToken: string, id: number): Promise<{ paciente: PacienteResumo }> {
+  return fetch(`${API_URL}/pacientes/${id}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  }).then((res) => parseJsonOrThrow<{ paciente: PacienteResumo }>(res))
+}
+
 export interface ListLogsFiltro {
   de?: string
   ate?: string
@@ -291,4 +297,25 @@ export function listLogs(
   return fetch(`${API_URL}/logs${query}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   }).then((res) => parseJsonOrThrow<{ items: LogResumo[]; total: number }>(res))
+}
+
+export interface UpdatePacienteInput {
+  nome?: string
+  cpf?: string
+  dataNascimento?: string
+  genero?: string
+  municipioId?: number
+  telefones?: string[]
+}
+
+export function updatePaciente(
+  accessToken: string,
+  id: number,
+  input: UpdatePacienteInput,
+): Promise<{ paciente: PacienteResumo }> {
+  return fetch(`${API_URL}/pacientes/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(input),
+  }).then((res) => parseJsonOrThrow<{ paciente: PacienteResumo }>(res))
 }
