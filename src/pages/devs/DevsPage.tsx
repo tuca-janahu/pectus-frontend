@@ -1,3 +1,6 @@
+import React from 'react';
+import DEVS_LIST from './DevsList';
+
 export function Devs() {
     return (
         <div>
