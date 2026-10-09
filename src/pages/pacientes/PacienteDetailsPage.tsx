@@ -14,20 +14,14 @@ import {
   IconPlus,
 } from '../../components/icons'
 import { useAuth } from '../../auth/AuthContext'
-import { getPaciente, listPacientes, uploadPacienteFoto, type PacienteResumo, ApiError } from '../../lib/api'
+import { getPaciente, uploadPacienteFoto, type PacienteResumo, ApiError } from '../../lib/api'
+import { obterIniciais, calcularIdadeAnos } from '../../lib/pacienteFormat'
 import { toastError, toastSuccess } from '../../lib/toast'
 import { PatientForm } from '../../components/pacientes/PatientForm'
 
 const AVATAR_COLORS: AvatarColor[] = ['sky', 'teal', 'violet', 'rose', 'amber']
 const FOTO_MIME_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp']
 const FOTO_MAX_BYTES = 8 * 1024 * 1024
-
-function obterIniciais(nome: string): string {
-  const partes = nome.trim().split(/\s+/).filter(Boolean)
-  if (partes.length >= 2) return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase()
-  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase()
-  return '?'
-}
 
 function formatarGenero(genero?: string | null): string {
   if (!genero) return 'Não informado'
@@ -43,13 +37,7 @@ function calcularIdade(dataNascimento?: string | null): string {
   if (!dataNascimento) return 'Idade não informada'
   const nascimento = new Date(dataNascimento)
   if (isNaN(nascimento.getTime())) return 'Idade não informada'
-  const hoje = new Date()
-  let idade = hoje.getFullYear() - nascimento.getFullYear()
-  const m = hoje.getMonth() - nascimento.getMonth()
-  if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
-    idade--
-  }
-  return `${idade} anos`
+  return `${calcularIdadeAnos(dataNascimento)} anos`
 }
 
 function formatarData(dataIso?: string | null): string {
@@ -86,6 +74,10 @@ export function PacienteDetailsPage() {
   const [fotoPreview, setFotoPreview] = useState<string | null>(null)
 
   const fotoInputRef = useRef<HTMLInputElement>(null)
+  // Guarda o id da requisição mais recente — se o usuário navegar para outro
+  // paciente antes de uma resposta anterior chegar, a resposta desatualizada
+  // é descartada em vez de sobrescrever o paciente atual.
+  const latestRequestRef = useRef<string | null>(null)
 
   useEffect(() => {
     return () => {
@@ -95,20 +87,33 @@ export function PacienteDetailsPage() {
 
   const carregarPaciente = useCallback(async () => {
     if (!accessToken || !id) return
+    latestRequestRef.current = id
+    const requestId = id
+    const numericId = Number(id)
+
+    if (Number.isNaN(numericId)) {
+      toastError('Identificador de paciente inválido.')
+      setPaciente(null)
+      setLoading(false)
+      return
+    }
+
     setLoading(true)
     try {
-      const res = await getPaciente(accessToken, Number(id))
+      const res = await getPaciente(accessToken, numericId)
+      if (latestRequestRef.current !== requestId) return
       setPaciente(res.paciente)
     } catch (err) {
-      try {
-        const { pacientes } = await listPacientes(accessToken)
-        const encontrado = pacientes.find((p) => p.id === Number(id))
-        setPaciente(encontrado ?? null)
-      } catch {
-        toastError('Erro ao carregar dados do paciente.')
+      if (latestRequestRef.current !== requestId) return
+      // Um 404 real significa "não existe" — não há necessidade de mostrar
+      // erro. Qualquer outra falha (401/403/500/rede) é um problema real que
+      // não deve ser disfarçado de "paciente não encontrado".
+      if (!(err instanceof ApiError && err.status === 404)) {
+        toastError(err instanceof ApiError ? err.message : 'Erro ao carregar dados do paciente.')
       }
+      setPaciente(null)
     } finally {
-      setLoading(false)
+      if (latestRequestRef.current === requestId) setLoading(false)
     }
   }, [accessToken, id])
 
@@ -137,6 +142,7 @@ export function PacienteDetailsPage() {
     try {
       const { paciente: atualizado } = await uploadPacienteFoto(accessToken, paciente.id, file)
       setPaciente(atualizado)
+      setFotoPreview(null)
       toastSuccess('Foto atualizada com sucesso!')
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Não foi possível atualizar a foto.'
@@ -172,9 +178,9 @@ export function PacienteDetailsPage() {
         <PatientForm
           paciente={paciente}
           onCancel={() => setIsEditing(false)}
-          onSuccess={() => {
+          onSuccess={(atualizado) => {
             setIsEditing(false)
-            carregarPaciente()
+            setPaciente(atualizado)
           }}
         />
       </div>

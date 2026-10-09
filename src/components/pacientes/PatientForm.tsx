@@ -44,7 +44,7 @@ export function PatientForm({ paciente, onCancel, onSuccess }: PatientFormProps)
 
   return (
     <div>
-      <Card padded={false} style={{ borderColor: 'color-mix(in oklch, var(--tm-primary) 35%, var(--tm-border))' }}>
+      <Card padded={false} style={{ overflow: 'hidden', borderColor: 'color-mix(in oklch, var(--tm-primary) 35%, var(--tm-border))' }}>
         <div className="flex items-center gap-3 border-b border-tm-border bg-[color-mix(in_oklch,var(--tm-primary)_7%,var(--tm-surface))] px-5 py-4">
           <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[11px] bg-[linear-gradient(135deg,var(--tm-primary),var(--tm-primary-deep))] text-white">
             {form.isEditing ? <IconEdit size={20} /> : <IconUserPlus size={20} />}

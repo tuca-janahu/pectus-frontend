@@ -228,7 +228,7 @@ export interface PacienteResumo {
   cpf: string | null
   dataNascimento: string
   genero: string
-  municipio: { codigo: number; nome: string; estado: { sigla: string; nome: string } } | null
+  municipio: { codigo: number; nome: string; estado: { codigo: number; sigla: string; nome: string } } | null
   telefones: { telefone: string }[]
   fotoUrl: string | null
   inativadoEm: string | null
