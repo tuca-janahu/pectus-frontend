@@ -15,6 +15,7 @@ import { RequireAuth } from './auth/RequireAuth'
 import { useAuth } from './auth/AuthContext'
 import { PacientesPage } from './pages/pacientes/PacientesPage'
 import { PacienteDetailsPage } from './pages/pacientes/PacienteDetailsPage'
+import { FichasPage } from './pages/FichasPage'
 import { IconSearch, IconFilter } from './components/icons'
 
 function routeIdFromPathname(pathname: string): RouteId {
@@ -29,11 +30,13 @@ function AuthenticatedApp() {
   const [notifications, setNotifications] = useState(TM_NOTIFICATIONS)
   const [searchTerm, setSearchTerm] = useState('')
   const [pacientesCount, setPacientesCount] = useState<number | null>(null)
+  const [fichasCount, setFichasCount] = useState<number | null>(null)
 
   const isDetailsRoute = Boolean(matchPath('/pacientes/:id', location.pathname))
   const route = routeIdFromPathname(location.pathname)
   const activeItem = TM_NAV_ITEMS.find((item) => item.id === route) ?? TM_NAV_ITEMS[0]
   const isPacientesRoute = route === 'busca' && !isDetailsRoute
+  const isFichasRoute = route === 'fichas'
 
   return (
     <AppShell
@@ -54,7 +57,11 @@ function AuthenticatedApp() {
             ? pacientesCount !== null
               ? `${pacientesCount} ${pacientesCount === 1 ? 'cadastrado' : 'cadastrados'}`
               : 'Carregando...'
-            : activeItem.subtitle
+            : isFichasRoute
+              ? fichasCount !== null
+                ? `${fichasCount} ${fichasCount === 1 ? 'ficha registrada' : 'fichas registradas'}`
+                : 'Carregando...'
+              : activeItem.subtitle
       }
       notifications={notifications}
       onMarkNotification={(id) =>
@@ -93,10 +100,12 @@ function AuthenticatedApp() {
               ) : item.id === 'admin' ? (
                 <AdminPage />
               ) : item.id === 'busca' ? (
-                <PacientesPage 
-                  searchTerm={searchTerm} 
-                  onCountChange={setPacientesCount} 
+                <PacientesPage
+                  searchTerm={searchTerm}
+                  onCountChange={setPacientesCount}
                 />
+              ) : item.id === 'fichas' ? (
+                <FichasPage onCountChange={setFichasCount} />
               ) : item.id === 'logs' ? (
                 <LogsPage />
               ) : item.id === 'perfil' ? (

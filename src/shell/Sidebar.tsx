@@ -1,5 +1,5 @@
 import { Avatar, IconButton } from '../components/ui'
-import { IconChevronLeft, IconLogOut, IconMenu, IconStethoscope } from '../components/icons'
+import { IconChevronLeft, IconLogOut, IconMenu, IconMoon, IconStethoscope, IconSun } from '../components/icons'
 import { useAuth } from '../auth/AuthContext'
 import { TM_NAV_ITEMS, type RouteId } from './navItems'
 
@@ -9,6 +9,8 @@ export interface SidebarProps {
   onLogout: () => void
   collapsed?: boolean
   onToggle?: () => void
+  theme?: 'light' | 'dark'
+  onToggleTheme?: () => void
 }
 
 function initialsFromName(name: string): string {
@@ -16,11 +18,18 @@ function initialsFromName(name: string): string {
   return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? (parts[parts.length - 1][0] ?? '') : '')).toUpperCase() || '?'
 }
 
-export function Sidebar({ route, onNavigate, onLogout, collapsed = false, onToggle }: SidebarProps) {
+export function Sidebar({ route, onNavigate, onLogout, collapsed = false, onToggle, theme = 'light', onToggleTheme }: SidebarProps) {
   const { user } = useAuth()
   const name = user?.nome ?? ''
   const subtitle = user?.medico?.crm ?? (user?.roles.includes('ADMIN') ? 'Administrador' : user?.email ?? '')
   const initials = initialsFromName(name)
+  const themeToggle = onToggleTheme && (
+    <IconButton
+      icon={theme === 'dark' ? <IconSun size={18} /> : <IconMoon size={18} />}
+      label={theme === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
+      onClick={onToggleTheme}
+    />
+  )
 
   return (
     <aside
@@ -91,6 +100,7 @@ export function Sidebar({ route, onNavigate, onLogout, collapsed = false, onTogg
           >
             <Avatar initials={initials} size={38} src={user?.fotoUrl ?? undefined} />
           </button>
+          {themeToggle}
           <IconButton icon={<IconLogOut size={18} />} label="Sair" onClick={onLogout} />
         </div>
       ) : (
@@ -104,6 +114,7 @@ export function Sidebar({ route, onNavigate, onLogout, collapsed = false, onTogg
               {subtitle}
             </div>
           </div>
+          {themeToggle}
           <IconButton icon={<IconLogOut size={18} />} label="Sair" onClick={onLogout} />
         </div>
       )}

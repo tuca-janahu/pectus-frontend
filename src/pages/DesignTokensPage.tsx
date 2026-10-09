@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Button, StatusBadge, type FichaStatus } from '../components/ui'
 
-type Theme = 'light' | 'dark'
 type Radius = 'sharp' | 'default' | 'soft'
 
 const COLOR_SWATCHES: { label: string; varName: string }[] = [
@@ -40,12 +39,7 @@ const RADII: { key: Radius; label: string }[] = [
 ]
 
 export function DesignTokensPage() {
-  const [theme, setTheme] = useState<Theme>('light')
   const [radius, setRadius] = useState<Radius>('default')
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-  }, [theme])
 
   useEffect(() => {
     document.documentElement.setAttribute('data-radius', radius)
@@ -67,13 +61,6 @@ export function DesignTokensPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <div className="flex gap-1 rounded-tm-sm border border-tm-border bg-tm-surface-2 p-1">
-            {(['light', 'dark'] as Theme[]).map((t) => (
-              <button key={t} className={toggleClass(theme === t)} onClick={() => setTheme(t)}>
-                {t === 'light' ? 'Claro' : 'Escuro'}
-              </button>
-            ))}
-          </div>
           <div className="flex gap-1 rounded-tm-sm border border-tm-border bg-tm-surface-2 p-1">
             {RADII.map((r) => (
               <button key={r.key} className={toggleClass(radius === r.key)} onClick={() => setRadius(r.key)}>

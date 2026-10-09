@@ -266,6 +266,17 @@ export const IconUserPlus = (p: IconProps) => (
     <path d="M18 8v6M21 11h-6" />
   </Icon>
 )
+export const IconSun = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" />
+  </Icon>
+)
+export const IconMoon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M21 12.5A9 9 0 1 1 11.5 3a7 7 0 0 0 9.5 9.5Z" />
+  </Icon>
+)
 export const IconLogo = (p: IconProps) => (
   <Icon {...p}>
     <path d="M12 2v4" />

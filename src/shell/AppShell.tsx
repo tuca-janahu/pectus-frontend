@@ -7,6 +7,8 @@ import type { RouteId } from './navItems'
 import type { Notification } from '../data/notifications'
 
 const COLLAPSED_STORAGE_KEY = 'tm-sidebar-collapsed'
+const THEME_STORAGE_KEY = 'tm-theme'
+type Theme = 'light' | 'dark'
 
 export interface AppShellProps {
   route: RouteId
@@ -34,15 +36,28 @@ export function AppShell({
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSED_STORAGE_KEY) === '1')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
+  const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light'))
 
   useEffect(() => {
     setSidebarOpen(false)
   }, [route])
 
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
+
   const toggleCollapsed = () => {
     setCollapsed((c) => {
       localStorage.setItem(COLLAPSED_STORAGE_KEY, c ? '0' : '1')
       return !c
+    })
+  }
+
+  const toggleTheme = () => {
+    setTheme((t) => {
+      const next = t === 'dark' ? 'light' : 'dark'
+      localStorage.setItem(THEME_STORAGE_KEY, next)
+      return next
     })
   }
 
@@ -57,7 +72,15 @@ export function AppShell({
       className={`grid min-h-dvh grid-cols-1 grid-rows-[1fr_auto] nav:grid-rows-[1fr] ${navCols} transition-[grid-template-columns] duration-200 ease-in-out`}
     >
       <aside className="hidden nav:flex flex-col">
-        <Sidebar route={route} onNavigate={onNavigate} onLogout={onLogout} collapsed={collapsed} onToggle={toggleCollapsed} />
+        <Sidebar
+          route={route}
+          onNavigate={onNavigate}
+          onLogout={onLogout}
+          collapsed={collapsed}
+          onToggle={toggleCollapsed}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+        />
       </aside>
 
       {sidebarOpen && (
@@ -67,7 +90,7 @@ export function AppShell({
             className="fixed inset-0 z-[60] bg-[rgb(15_23_42_/_0.35)] backdrop-blur-sm"
           />
           <aside className="fixed inset-y-0 left-0 z-[61] w-[min(280px,85vw)] bg-tm-surface shadow-[12px_0_40px_rgb(0_0_0_/_0.2)]">
-            <Sidebar route={route} onNavigate={onNavigate} onLogout={onLogout} />
+            <Sidebar route={route} onNavigate={onNavigate} onLogout={onLogout} theme={theme} onToggleTheme={toggleTheme} />
           </aside>
         </>
       )}
