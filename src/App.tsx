@@ -17,6 +17,7 @@ import { PacientesPage } from './pages/pacientes/PacientesPage'
 import { PacienteDetailsPage } from './pages/pacientes/PacienteDetailsPage'
 import { FichasPage } from './pages/FichasPage'
 import { IconSearch, IconFilter } from './components/icons'
+import { Devs } from './pages/DevsPage'
 
 function routeIdFromPathname(pathname: string): RouteId {
   if (matchPath('/pacientes/:id', pathname)) return 'busca'
@@ -110,6 +111,8 @@ function AuthenticatedApp() {
                 <LogsPage />
               ) : item.id === 'perfil' ? (
                 <PerfilPage />
+              ) : item.id === 'devs' ? (
+                <Devs />
               ) : (
                 <ScreenPlaceholder item={item} />
               )

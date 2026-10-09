@@ -10,7 +10,7 @@ import {
   IconUsers,
 } from '../components/icons'
 
-export type RouteId = 'home' | 'dashboard' | 'fichas' | 'calendario' | 'busca' | 'admin' | 'logs' | 'perfil'
+export type RouteId = 'home' | 'dashboard' | 'fichas' | 'calendario' | 'busca' | 'admin' | 'logs' | 'perfil' | 'devs'
 
 export interface NavItem {
   id: RouteId
@@ -53,4 +53,6 @@ export const TM_NAV_ITEMS: NavItem[] = [
     subtitle: 'Histórico de auditoria do sistema',
   },
   { id: 'perfil', label: 'Perfil', path: '/perfil', icon: <IconUser size={20} /> },
+  { id: 'devs', label: 'Devs', path: '/devs', icon: <IconUsers size={20} /> },
 ]
+
