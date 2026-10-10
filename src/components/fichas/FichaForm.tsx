@@ -32,7 +32,7 @@ interface FichaFormProps {
 
 export function FichaForm({ ficha, onCancel, onSuccess }: FichaFormProps) {
   const isEditing = !!ficha
-  const { accessToken } = useAuth()
+  const { accessToken, user } = useAuth()
 
   // Paciente: ou seleciona um existente, ou cadastra um novo — nesse segundo
   // caso o mesmo botão de salvar cria o paciente e a ficha em uma única ação.
@@ -104,7 +104,10 @@ export function FichaForm({ ficha, onCancel, onSuccess }: FichaFormProps) {
         descricao,
         modo: ficha?.modo ?? 'previa',
       }
-      const salva = isEditing ? await updateFicha(ficha.id, input) : await createFicha(input)
+      if (!accessToken || !user?.medico?.id) throw new Error('Seu usuário não possui um perfil médico ativo.')
+      const salva = isEditing
+        ? await updateFicha(accessToken, user.medico.id, ficha.id, input)
+        : await createFicha(accessToken, user.medico.id, input)
       toastSuccess(isEditing ? 'Ficha atualizada com sucesso.' : 'Ficha criada com sucesso.')
       onSuccess(salva)
     } catch (err) {
@@ -193,7 +196,7 @@ export function FichaForm({ ficha, onCancel, onSuccess }: FichaFormProps) {
           label="Status"
           value={status}
           onChange={(v) => setStatus(v as FichaStatus)}
-          options={STATUS_OPTIONS}
+          options={STATUS_OPTIONS.filter((option) => !ficha || ficha.status === 'agendada' || option.value !== 'agendada')}
           disabled={loading}
         />
 

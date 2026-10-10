@@ -7,6 +7,7 @@ import { PROCEDIMENTOS } from '../../data/procedimentos'
 import { createFicha, type Ficha } from '../../lib/fichasStore'
 import type { PacienteResumo } from '../../lib/api'
 import { toastError, toastSuccess } from '../../lib/toast'
+import { useAuth } from '../../auth/AuthContext'
 
 const AVATAR_COLORS: AvatarColor[] = ['sky', 'teal', 'violet', 'rose', 'amber']
 
@@ -75,6 +76,7 @@ interface FichaAoVivoProps {
 }
 
 export function FichaAoVivo({ onCancel, onSuccess }: FichaAoVivoProps) {
+  const { accessToken, user } = useAuth()
   const [idx, setIdx] = useState(0)
   const [review, setReview] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -169,9 +171,13 @@ export function FichaAoVivo({ onCancel, onSuccess }: FichaAoVivoProps) {
 
   const finish = async () => {
     if (!pacienteId) return
+    if (!accessToken || !user?.medico?.id) {
+      toastError('Seu usuário não possui um perfil médico ativo.')
+      return
+    }
     setLoading(true)
     try {
-      const ficha = await createFicha({
+      const ficha = await createFicha(accessToken, user.medico.id, {
         pacienteId,
         data,
         hora,

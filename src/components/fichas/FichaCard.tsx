@@ -56,22 +56,26 @@ export function FichaCard({
       </div>
 
       <div className="flex items-center gap-1">
-        <IconButton
-          icon={<IconEdit size={17} />}
-          label="Editar"
-          onClick={(e) => {
-            e.stopPropagation()
-            onEdit?.()
-          }}
-        />
-        <IconButton
-          icon={<IconTrash size={17} />}
-          label="Excluir"
-          onClick={(e) => {
-            e.stopPropagation()
-            onDelete?.()
-          }}
-        />
+        {onEdit && (
+          <IconButton
+            icon={<IconEdit size={17} />}
+            label="Editar"
+            onClick={(e) => {
+              e.stopPropagation()
+              onEdit()
+            }}
+          />
+        )}
+        {onDelete && (
+          <IconButton
+            icon={<IconTrash size={17} />}
+            label="Cancelar ficha"
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete()
+            }}
+          />
+        )}
       </div>
     </div>
   )
