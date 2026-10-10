@@ -17,7 +17,7 @@ const STATUS_MAP: Record<FichaStatus, { label: string; classes: string; dotClass
     dotClass: 'bg-tm-status-cancelada-dot',
   },
   pendente: {
-    label: 'Pendente',
+    label: 'Em preenchimento',
     classes: 'bg-tm-status-pendente-bg text-tm-status-pendente-fg',
     dotClass: 'bg-tm-status-pendente-dot',
   },
