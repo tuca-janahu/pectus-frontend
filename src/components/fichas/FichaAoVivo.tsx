@@ -33,13 +33,14 @@ function hojeISO(): string {
 }
 
 interface FichaAoVivoProps {
+  pacienteIdInicial?: number
   onCancel: () => void
   onSuccess: (ficha: Ficha) => void
 }
 
-export function FichaAoVivo({ onCancel, onSuccess }: FichaAoVivoProps) {
+export function FichaAoVivo({ pacienteIdInicial, onCancel, onSuccess }: FichaAoVivoProps) {
   const { accessToken, user } = useAuth()
-  const [pacienteId, setPacienteId] = useState<number | ''>('')
+  const [pacienteId, setPacienteId] = useState<number | ''>(pacienteIdInicial ?? '')
   const [pacientes, setPacientes] = useState<PacienteResumo[]>([])
   const [procedimento, setProcedimento] = useState('')
   const [observacoes, setObservacoes] = useState('')

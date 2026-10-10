@@ -17,6 +17,8 @@ import { useAuth } from '../../auth/AuthContext'
 import { getPaciente, listPacientes, uploadPacienteFoto, type PacienteResumo, ApiError } from '../../lib/api'
 import { toastError, toastSuccess } from '../../lib/toast'
 import { PatientForm } from '../../components/pacientes/PatientForm'
+import { FichaCard } from '../../components/fichas/FichaCard'
+import { deleteFicha, listFichas, type Ficha } from '../../lib/fichasStore'
 
 const AVATAR_COLORS: AvatarColor[] = ['sky', 'teal', 'violet', 'rose', 'amber']
 const FOTO_MIME_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp']
@@ -80,7 +82,9 @@ export function PacienteDetailsPage() {
   const { accessToken } = useAuth()
 
   const [paciente, setPaciente] = useState<PacienteResumo | null>(null)
+  const [fichas, setFichas] = useState<Ficha[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingFichas, setLoadingFichas] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [uploadingFoto, setUploadingFoto] = useState(false)
   const [fotoPreview, setFotoPreview] = useState<string | null>(null)
@@ -99,7 +103,7 @@ export function PacienteDetailsPage() {
     try {
       const res = await getPaciente(accessToken, Number(id))
       setPaciente(res.paciente)
-    } catch (err) {
+    } catch {
       try {
         const { pacientes } = await listPacientes(accessToken)
         const encontrado = pacientes.find((p) => p.id === Number(id))
@@ -112,9 +116,49 @@ export function PacienteDetailsPage() {
     }
   }, [accessToken, id])
 
+  const carregarFichas = useCallback(async () => {
+    if (!accessToken || !id) return
+    setLoadingFichas(true)
+    try {
+      const lista = await listFichas(accessToken)
+      setFichas(
+        lista
+          .filter((ficha) => ficha.pacienteId === Number(id))
+          .sort((a, b) => `${b.data}T${b.hora}`.localeCompare(`${a.data}T${a.hora}`)),
+      )
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Não foi possível carregar as fichas do paciente.')
+    } finally {
+      setLoadingFichas(false)
+    }
+  }, [accessToken, id])
+
   useEffect(() => {
     carregarPaciente()
-  }, [carregarPaciente])
+    carregarFichas()
+  }, [carregarPaciente, carregarFichas])
+
+  const abrirNovaFicha = () => {
+    const pacienteId = paciente?.id ?? Number(id)
+    const retorno = `/pacientes/${pacienteId}`
+    navigate(`/fichas/nova?pacienteId=${pacienteId}&retorno=${encodeURIComponent(retorno)}`)
+  }
+
+  const editarFicha = (ficha: Ficha) => {
+    const retorno = `/pacientes/${paciente?.id ?? id}`
+    navigate(`/fichas/${ficha.id}/editar?retorno=${encodeURIComponent(retorno)}`)
+  }
+
+  const cancelarFicha = async (ficha: Ficha) => {
+    if (!accessToken) return
+    try {
+      await deleteFicha(accessToken, ficha.id)
+      toastSuccess('Ficha cancelada.')
+      await carregarFichas()
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Não foi possível cancelar a ficha.')
+    }
+  }
 
   const handleTrocarFoto = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -292,11 +336,35 @@ export function PacienteDetailsPage() {
                 <IconActivity size={20} className="text-tm-primary" />
                 <h3 className="text-tm-base font-semibold text-tm-fg">Fichas e Atendimentos</h3>
               </div>
-              <Button size="sm" icon={<IconPlus size={16} />} onClick={() => console.log('Nova Ficha')}>
+              <Button size="sm" icon={<IconPlus size={16} />} onClick={abrirNovaFicha}>
                 Nova ficha
               </Button>
             </div>
-            <p className="text-tm-sm text-tm-fg-muted">Nenhuma ficha registrada até o momento.</p>
+            {loadingFichas ? (
+              <p className="text-tm-sm text-tm-fg-muted">Carregando fichas...</p>
+            ) : fichas.length === 0 ? (
+              <p className="text-tm-sm text-tm-fg-muted">Nenhuma ficha registrada até o momento.</p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {fichas.map((ficha) => (
+                  <div key={ficha.id} className="flex flex-col gap-1.5">
+                    <span className="text-tm-xs font-semibold uppercase tracking-wide text-tm-fg-subtle">
+                      {formatarData(`${ficha.data}T00:00:00`)}
+                    </span>
+                    <FichaCard
+                      ficha={ficha}
+                      pacienteNome={paciente.nome}
+                      iniciais={obterIniciais(paciente.nome)}
+                      avatarColor={avatarColor}
+                      fotoUrl={imagemSrc}
+                      onClick={ficha.status === 'agendada' || ficha.status === 'pendente' ? () => editarFicha(ficha) : undefined}
+                      onEdit={ficha.status === 'agendada' || ficha.status === 'pendente' ? () => editarFicha(ficha) : undefined}
+                      onDelete={ficha.status === 'agendada' || ficha.status === 'pendente' ? () => cancelarFicha(ficha) : undefined}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
         </div>
       </div>

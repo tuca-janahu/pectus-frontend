@@ -74,6 +74,11 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
   const editMatch = matchPath('/fichas/:id/editar', pathname)
   const editingId = editMatch ? Number(editMatch.params.id) : undefined
   const editingFicha = editingId ? fichas.find((ficha) => ficha.id === editingId) : undefined
+  const searchParams = new URLSearchParams(location.search)
+  const pacienteIdParam = Number(searchParams.get('pacienteId'))
+  const pacienteIdInicial = Number.isInteger(pacienteIdParam) && pacienteIdParam > 0 ? pacienteIdParam : undefined
+  const retornoParam = searchParams.get('retorno')
+  const retorno = retornoParam?.startsWith('/pacientes/') ? retornoParam : '/fichas'
 
   const carregarFichas = useCallback(async () => {
     if (!accessToken) return
@@ -129,7 +134,7 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
   }
 
   const backToList = () => {
-    navigate('/fichas')
+    navigate(retorno)
   }
 
   const handleSaved = async () => {
@@ -140,17 +145,17 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
   if (pathname === '/fichas/nova') {
     return (
       <NovaFichaChooser
-        onChoose={(id) => navigate(id === 'form' ? '/fichas/nova/agendamento' : '/fichas/nova/atendimento')}
+        onChoose={(id) => navigate(`${id === 'form' ? '/fichas/nova/agendamento' : '/fichas/nova/atendimento'}${location.search}`)}
       />
     )
   }
 
   if (pathname === '/fichas/nova/agendamento') {
-    return <FichaForm onCancel={backToList} onSuccess={handleSaved} />
+    return <FichaForm pacienteIdInicial={pacienteIdInicial} onCancel={backToList} onSuccess={handleSaved} />
   }
 
   if (pathname === '/fichas/nova/atendimento') {
-    return <FichaAoVivo onCancel={backToList} onSuccess={handleSaved} />
+    return <FichaAoVivo pacienteIdInicial={pacienteIdInicial} onCancel={backToList} onSuccess={handleSaved} />
   }
 
   if (editMatch) {

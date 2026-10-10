@@ -35,18 +35,19 @@ function calcularIdade(dataNascimento: string): number {
 
 interface FichaFormProps {
   ficha?: Ficha
+  pacienteIdInicial?: number
   onCancel: () => void
   onSuccess: (ficha: Ficha) => void
 }
 
-export function FichaForm({ ficha, onCancel, onSuccess }: FichaFormProps) {
+export function FichaForm({ ficha, pacienteIdInicial, onCancel, onSuccess }: FichaFormProps) {
   const isEditing = !!ficha
   const { accessToken, user } = useAuth()
 
   // Paciente: ou seleciona um existente, ou cadastra um novo — nesse segundo
   // caso o mesmo botão de salvar cria o paciente e a ficha em uma única ação.
   const [modoPaciente, setModoPaciente] = useState<'existente' | 'novo'>('existente')
-  const [pacienteId, setPacienteId] = useState<number | ''>(ficha?.pacienteId ?? '')
+  const [pacienteId, setPacienteId] = useState<number | ''>(ficha?.pacienteId ?? pacienteIdInicial ?? '')
   const [pacientes, setPacientes] = useState<PacienteResumo[]>([])
   const [loadingPacientes, setLoadingPacientes] = useState(true)
   const novoPacienteForm = usePatientForm()

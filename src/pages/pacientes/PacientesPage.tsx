@@ -7,6 +7,7 @@ import { PatientCard } from '../../components/pacientes/PatientCard'
 import { PatientForm } from '../../components/pacientes/PatientForm'
 import { useAuth } from '../../auth/AuthContext'
 import { listPacientes, ApiError, type PacienteResumo } from '../../lib/api'
+import { listFichas } from '../../lib/fichasStore'
 import { toastError } from '../../lib/toast'
 
 export interface PacientesPageProps {
@@ -22,6 +23,7 @@ export function PacientesPage({ searchTerm = '', onCountChange }: PacientesPageP
   const [showForm, setShowForm] = useState(false)
 
   const [pacientes, setPacientes] = useState<PacienteResumo[]>([])
+  const [fichasPorPaciente, setFichasPorPaciente] = useState<Record<number, number>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -46,6 +48,21 @@ export function PacientesPage({ searchTerm = '', onCountChange }: PacientesPageP
   useEffect(() => {
     carregarPacientes()
   }, [carregarPacientes])
+
+  useEffect(() => {
+    if (!accessToken) return
+    listFichas(accessToken)
+      .then((fichas) => {
+        const contagens = fichas.reduce<Record<number, number>>((acc, ficha) => {
+          acc[ficha.pacienteId] = (acc[ficha.pacienteId] ?? 0) + 1
+          return acc
+        }, {})
+        setFichasPorPaciente(contagens)
+      })
+      .catch((err) => {
+        toastError(err instanceof Error ? err.message : 'Não foi possível carregar a contagem de fichas.')
+      })
+  }, [accessToken])
 
   const calcularIdade = (dataNascimento: string) => {
     const hoje = new Date()
@@ -117,7 +134,7 @@ export function PacientesPage({ searchTerm = '', onCountChange }: PacientesPageP
               key={paciente.id}
               nome={paciente.nome}
               idade={calcularIdade(paciente.dataNascimento)}
-              fichas={0}
+              fichas={fichasPorPaciente[paciente.id] ?? 0}
               iniciais={obterIniciais(paciente.nome)}
               avatarColor={AVATAR_COLORS[i % AVATAR_COLORS.length]}
               fotoUrl={paciente.fotoUrl}
