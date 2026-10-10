@@ -16,5 +16,5 @@ export const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: 'agendada', label: 'Agendada' },
   { value: 'concluida', label: 'Concluída' },
   { value: 'cancelada', label: 'Cancelada' },
-  { value: 'pendente', label: 'Pendente' },
+  { value: 'pendente', label: 'Em preenchimento' },
 ]

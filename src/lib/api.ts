@@ -5,7 +5,7 @@ export interface AuthUser {
   email: string
   nome: string
   roles: string[]
-  medico: { crm: string } | null
+  medico: { id: number; crm: string } | null
   // Ausente nas respostas de /auth/login e /auth/google (a foto só é resolvida
   // em /auth/me, que já faz a consulta extra de qualquer forma) — por isso opcional.
   fotoUrl?: string | null

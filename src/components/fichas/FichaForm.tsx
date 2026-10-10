@@ -5,11 +5,20 @@ import { IconCheck, IconClipboard, IconClose, IconEdit, IconUser, IconUserPlus }
 import { PatientFormFields } from '../pacientes/PatientFormFields'
 import { usePatientForm } from '../pacientes/usePatientForm'
 import { PROCEDIMENTOS, STATUS_OPTIONS } from '../../data/procedimentos'
-import { createFicha, updateFicha, type Ficha, type FichaInput } from '../../lib/fichasStore'
+import {
+  EMPTY_CLINICAL_VALUES,
+  clinicalValuesFromFicha,
+  createFicha,
+  updateFicha,
+  type Ficha,
+  type FichaClinicalValues,
+  type FichaInput,
+} from '../../lib/fichasStore'
 import type { FichaStatus } from '../ui'
 import { useAuth } from '../../auth/AuthContext'
 import { listPacientes, ApiError, type PacienteResumo } from '../../lib/api'
 import { toastError, toastSuccess } from '../../lib/toast'
+import { FichaClinicalFields } from './FichaClinicalFields'
 
 function hojeISO(): string {
   return new Date().toISOString().slice(0, 10)
@@ -32,7 +41,7 @@ interface FichaFormProps {
 
 export function FichaForm({ ficha, onCancel, onSuccess }: FichaFormProps) {
   const isEditing = !!ficha
-  const { accessToken } = useAuth()
+  const { accessToken, user } = useAuth()
 
   // Paciente: ou seleciona um existente, ou cadastra um novo — nesse segundo
   // caso o mesmo botão de salvar cria o paciente e a ficha em uma única ação.
@@ -47,6 +56,9 @@ export function FichaForm({ ficha, onCancel, onSuccess }: FichaFormProps) {
   const [procedimento, setProcedimento] = useState(ficha?.procedimento || '')
   const [status, setStatus] = useState<FichaStatus>(ficha?.status || 'agendada')
   const [descricao, setDescricao] = useState(ficha?.descricao || '')
+  const [clinical, setClinical] = useState<FichaClinicalValues>(
+    ficha ? clinicalValuesFromFicha(ficha) : { ...EMPTY_CLINICAL_VALUES },
+  )
   const [error, setError] = useState<{ pacienteId?: string; data?: string; procedimento?: string }>({})
   const [loading, setLoading] = useState(false)
 
@@ -103,8 +115,12 @@ export function FichaForm({ ficha, onCancel, onSuccess }: FichaFormProps) {
         status,
         descricao,
         modo: ficha?.modo ?? 'previa',
+        ...(status === 'pendente' || status === 'concluida' ? clinical : {}),
       }
-      const salva = isEditing ? await updateFicha(ficha.id, input) : await createFicha(input)
+      if (!accessToken || !user?.medico?.id) throw new Error('Seu usuário não possui um perfil médico ativo.')
+      const salva = isEditing
+        ? await updateFicha(accessToken, user.medico.id, ficha.id, input)
+        : await createFicha(accessToken, user.medico.id, input)
       toastSuccess(isEditing ? 'Ficha atualizada com sucesso.' : 'Ficha criada com sucesso.')
       onSuccess(salva)
     } catch (err) {
@@ -193,9 +209,13 @@ export function FichaForm({ ficha, onCancel, onSuccess }: FichaFormProps) {
           label="Status"
           value={status}
           onChange={(v) => setStatus(v as FichaStatus)}
-          options={STATUS_OPTIONS}
+          options={STATUS_OPTIONS.filter((option) => !ficha || ficha.status === 'agendada' || option.value !== 'agendada')}
           disabled={loading}
         />
+
+        {(status === 'pendente' || status === 'concluida') && (
+          <FichaClinicalFields value={clinical} onChange={setClinical} disabled={loading} />
+        )}
 
         <label className="flex flex-col gap-1.5">
           <span className="text-tm-base font-semibold text-tm-fg">Descrição / observações</span>

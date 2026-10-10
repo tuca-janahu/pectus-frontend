@@ -73,10 +73,11 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
   const [loading, setLoading] = useState(true)
 
   const carregarFichas = useCallback(async () => {
-    const lista = await listFichas()
+    if (!accessToken) return
+    const lista = await listFichas(accessToken)
     setFichas(lista)
     onCountChange?.(lista.length)
-  }, [onCountChange])
+  }, [accessToken, onCountChange])
 
   const carregarPacientes = useCallback(async () => {
     if (!accessToken) return
@@ -117,8 +118,9 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
 
   const handleDelete = async (ficha: Ficha) => {
     try {
-      await deleteFicha(ficha.id)
-      toastSuccess('Ficha excluída.')
+      if (!accessToken) return
+      await deleteFicha(accessToken, ficha.id)
+      toastSuccess('Ficha cancelada.')
       await carregarFichas()
     } catch {
       toastError('Não foi possível excluir a ficha.')
@@ -222,9 +224,9 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
                         iniciais={p ? obterIniciais(p.nome) : '?'}
                         avatarColor={AVATAR_COLORS[f.pacienteId % AVATAR_COLORS.length]}
                         fotoUrl={p?.fotoUrl}
-                        onClick={() => openEdit(f)}
-                        onEdit={() => openEdit(f)}
-                        onDelete={() => handleDelete(f)}
+                        onClick={f.status === 'agendada' || f.status === 'pendente' ? () => openEdit(f) : undefined}
+                        onEdit={f.status === 'agendada' || f.status === 'pendente' ? () => openEdit(f) : undefined}
+                        onDelete={f.status === 'agendada' || f.status === 'pendente' ? () => handleDelete(f) : undefined}
                       />
                     )
                   })}
