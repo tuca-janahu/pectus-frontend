@@ -1,18 +1,14 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { useAuth } from '../../auth/AuthContext'
 import { createPaciente, updatePaciente, uploadPacienteFoto, type PacienteResumo } from '../../lib/api'
+import { obterIniciais } from '../../lib/pacienteFormat'
 import { toastError } from '../../lib/toast'
 import type { AddressSelectorValue } from './AddressSelector'
 
+export { obterIniciais }
+
 const FOTO_MIME_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp']
 const FOTO_MAX_BYTES = 8 * 1024 * 1024
-
-export function obterIniciais(nome: string): string {
-  const partes = nome.trim().split(/\s+/).filter(Boolean)
-  if (partes.length >= 2) return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase()
-  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase()
-  return '?'
-}
 
 // Estado + lógica de submit do formulário de paciente, extraído de PatientForm
 // para ser reutilizado também dentro do formulário de ficha (criar paciente e
@@ -28,7 +24,7 @@ export function usePatientForm(paciente?: PacienteResumo) {
   const [genero, setGenero] = useState(paciente?.genero || '')
 
   const [enderecoNacional, setEnderecoNacional] = useState<AddressSelectorValue>({
-    estadoId: '',
+    estadoId: paciente?.municipio?.estado?.codigo || '',
     estadoSigla: paciente?.municipio?.estado?.sigla || '',
     municipioId: paciente?.municipio?.codigo || '',
     municipioNome: paciente?.municipio?.nome || '',

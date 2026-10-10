@@ -8,6 +8,7 @@ import { PatientForm } from '../../components/pacientes/PatientForm'
 import { useAuth } from '../../auth/AuthContext'
 import { listPacientes, ApiError, type PacienteResumo } from '../../lib/api'
 import { listFichas } from '../../lib/fichasStore'
+import { obterIniciais, calcularIdadeAnos } from '../../lib/pacienteFormat'
 import { toastError } from '../../lib/toast'
 
 export interface PacientesPageProps {
@@ -63,26 +64,6 @@ export function PacientesPage({ searchTerm = '', onCountChange }: PacientesPageP
         toastError(err instanceof Error ? err.message : 'Não foi possível carregar a contagem de fichas.')
       })
   }, [accessToken])
-
-  const calcularIdade = (dataNascimento: string) => {
-    const hoje = new Date()
-    const nascimento = new Date(dataNascimento)
-    let idade = hoje.getFullYear() - nascimento.getFullYear()
-    const m = hoje.getMonth() - nascimento.getMonth()
-    if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
-      idade--
-    }
-    return idade
-  }
-
-  const obterIniciais = (nome: string) => {
-    const partes = nome.trim().split(' ')
-    if (partes.length >= 2) {
-      return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase()
-    }
-    return nome.substring(0, 2).toUpperCase()
-  }
-
   return (
     <div className="flex flex-col gap-6 text-tm-fg">
       {!showForm && (
@@ -129,14 +110,14 @@ export function PacientesPage({ searchTerm = '', onCountChange }: PacientesPageP
         <div className="text-tm-sm text-tm-fg-muted py-4">Nenhum paciente encontrado.</div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {pacientes.map((paciente, i) => (
+          {pacientes.map((paciente) => (
             <PatientCard
               key={paciente.id}
               nome={paciente.nome}
-              idade={calcularIdade(paciente.dataNascimento)}
+              idade={calcularIdadeAnos(paciente.dataNascimento)}
               fichas={fichasPorPaciente[paciente.id] ?? 0}
               iniciais={obterIniciais(paciente.nome)}
-              avatarColor={AVATAR_COLORS[i % AVATAR_COLORS.length]}
+              avatarColor={AVATAR_COLORS[paciente.id % AVATAR_COLORS.length]}
               fotoUrl={paciente.fotoUrl}
               onClick={() => navigate(`/pacientes/${paciente.id}`)}
             />
