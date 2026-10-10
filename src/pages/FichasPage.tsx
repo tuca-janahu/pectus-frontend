@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { matchPath, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { Card, EmptyState } from '../components/ui'
 import type { AvatarColor } from '../components/ui'
 import { IconCalendar, IconList, IconPlus } from '../components/icons'
@@ -47,7 +47,6 @@ function diaRelativo(iso: string): string | null {
   return null
 }
 
-type View = 'list' | 'chooser' | 'form' | 'ao-vivo'
 type Filtro = 'todas' | 'agendada' | 'concluida'
 
 const FILTROS: { id: Filtro; label: string }[] = [
@@ -62,15 +61,19 @@ export interface FichasPageProps {
 
 export function FichasPage({ onCountChange }: FichasPageProps) {
   const navigate = useNavigate()
+  const location = useLocation()
   const { accessToken } = useAuth()
 
-  const [view, setView] = useState<View>('list')
-  const [editingFicha, setEditingFicha] = useState<Ficha | undefined>(undefined)
   const [filtro, setFiltro] = useState<Filtro>('todas')
 
   const [fichas, setFichas] = useState<Ficha[]>([])
   const [pacientes, setPacientes] = useState<PacienteResumo[]>([])
   const [loading, setLoading] = useState(true)
+
+  const pathname = location.pathname.replace(/\/+$/, '') || '/'
+  const editMatch = matchPath('/fichas/:id/editar', pathname)
+  const editingId = editMatch ? Number(editMatch.params.id) : undefined
+  const editingFicha = editingId ? fichas.find((ficha) => ficha.id === editingId) : undefined
 
   const carregarFichas = useCallback(async () => {
     if (!accessToken) return
@@ -107,13 +110,11 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
   }, [fichas, filtro])
 
   const openCreate = () => {
-    setEditingFicha(undefined)
-    setView('chooser')
+    navigate('/fichas/nova')
   }
 
   const openEdit = (ficha: Ficha) => {
-    setEditingFicha(ficha)
-    setView('form')
+    navigate(`/fichas/${ficha.id}/editar`)
   }
 
   const handleDelete = async (ficha: Ficha) => {
@@ -128,8 +129,7 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
   }
 
   const backToList = () => {
-    setView('list')
-    setEditingFicha(undefined)
+    navigate('/fichas')
   }
 
   const handleSaved = async () => {
@@ -137,16 +137,36 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
     backToList()
   }
 
-  if (view === 'chooser') {
-    return <NovaFichaChooser onChoose={(id) => setView(id)} />
+  if (pathname === '/fichas/nova') {
+    return (
+      <NovaFichaChooser
+        onChoose={(id) => navigate(id === 'form' ? '/fichas/nova/agendamento' : '/fichas/nova/atendimento')}
+      />
+    )
   }
 
-  if (view === 'form') {
+  if (pathname === '/fichas/nova/agendamento') {
+    return <FichaForm onCancel={backToList} onSuccess={handleSaved} />
+  }
+
+  if (pathname === '/fichas/nova/atendimento') {
+    return <FichaAoVivo onCancel={backToList} onSuccess={handleSaved} />
+  }
+
+  if (editMatch) {
+    if (loading) {
+      return <div className="py-4 text-tm-sm text-tm-fg-muted">Carregando ficha...</div>
+    }
+
+    if (!editingFicha) {
+      return <Navigate to="/fichas" replace />
+    }
+
     return <FichaForm ficha={editingFicha} onCancel={backToList} onSuccess={handleSaved} />
   }
 
-  if (view === 'ao-vivo') {
-    return <FichaAoVivo onCancel={backToList} onSuccess={handleSaved} />
+  if (pathname !== '/fichas') {
+    return <Navigate to="/fichas" replace />
   }
 
   return (

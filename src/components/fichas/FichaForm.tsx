@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Button, Card, Dropdown, IconButton, Input, Select } from '../ui'
 import type { DropdownOption } from '../ui'
-import { IconCheck, IconClipboard, IconClose, IconEdit, IconUser, IconUserPlus } from '../icons'
+import { IconArrowLeft, IconCheck, IconClipboard, IconClose, IconEdit, IconUser, IconUserPlus } from '../icons'
 import { PatientFormFields } from '../pacientes/PatientFormFields'
 import { usePatientForm } from '../pacientes/usePatientForm'
 import { PROCEDIMENTOS, STATUS_OPTIONS } from '../../data/procedimentos'
@@ -133,8 +133,17 @@ export function FichaForm({ ficha, onCancel, onSuccess }: FichaFormProps) {
   const submitLabel = isEditing ? 'Salvar alterações' : modoPaciente === 'novo' ? 'Criar paciente e ficha' : 'Criar ficha'
 
   return (
-    <Card padded={false} style={{ borderColor: 'color-mix(in oklch, var(--tm-primary) 35%, var(--tm-border))' }}>
-      <div className="flex items-center gap-3 border-b border-tm-border bg-[color-mix(in_oklch,var(--tm-primary)_7%,var(--tm-surface))] px-5 py-4">
+    <div className="flex flex-col gap-4">
+      <button
+        type="button"
+        onClick={onCancel}
+        className="inline-flex items-center gap-2 self-start rounded-tm-sm text-tm-sm font-medium text-tm-fg-muted transition-colors hover:text-tm-primary"
+      >
+        <IconArrowLeft size={16} />
+        Voltar para a lista de fichas
+      </button>
+      <Card padded={false} style={{ overflow: 'hidden', borderColor: 'color-mix(in oklch, var(--tm-primary) 35%, var(--tm-border))' }}>
+        <div className="flex items-center gap-3 border-b border-tm-border bg-[color-mix(in_oklch,var(--tm-primary)_7%,var(--tm-surface))] px-5 py-4">
         <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[11px] bg-[linear-gradient(135deg,var(--tm-primary),var(--tm-primary-deep))] text-white">
           {isEditing ? <IconEdit size={20} /> : <IconClipboard size={20} />}
         </div>
@@ -147,9 +156,9 @@ export function FichaForm({ ficha, onCancel, onSuccess }: FichaFormProps) {
           </div>
         </div>
         <IconButton icon={<IconClose size={20} />} label="Cancelar" onClick={onCancel} />
-      </div>
+        </div>
 
-      <form onSubmit={submit} className="flex flex-col gap-4 p-5">
+        <form onSubmit={submit} className="flex flex-col gap-4 p-5">
         {modoPaciente === 'existente' ? (
           <div className="flex flex-col gap-2">
             <Dropdown
@@ -237,7 +246,8 @@ export function FichaForm({ ficha, onCancel, onSuccess }: FichaFormProps) {
             {loading ? 'Salvando...' : submitLabel}
           </Button>
         </div>
-      </form>
-    </Card>
+        </form>
+      </Card>
+    </div>
   )
 }

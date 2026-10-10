@@ -20,6 +20,7 @@ import { IconSearch, IconFilter } from './components/icons'
 
 function routeIdFromPathname(pathname: string): RouteId {
   if (matchPath('/pacientes/:id', pathname)) return 'busca'
+  if (pathname === '/fichas' || pathname.startsWith('/fichas/')) return 'fichas'
   return TM_NAV_ITEMS.find((item) => item.path === pathname)?.id ?? 'home'
 }
 
@@ -93,7 +94,7 @@ function AuthenticatedApp() {
         {TM_NAV_ITEMS.map((item) => (
           <Route
             key={item.id}
-            path={item.path}
+            path={item.id === 'fichas' ? '/fichas/*' : item.path}
             element={
               item.id === 'home' ? (
                 <DesignTokensPage />
