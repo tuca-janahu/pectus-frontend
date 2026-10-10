@@ -42,6 +42,93 @@ function TextareaField({
   )
 }
 
+function BooleanChoice({
+  label,
+  value,
+  onChange,
+  disabled,
+}: {
+  label: string
+  value: boolean
+  onChange: (value: boolean) => void
+  disabled?: boolean
+}) {
+  return (
+    <div
+      role="group"
+      aria-label={label}
+      className="inline-flex shrink-0 rounded-tm-button border border-tm-border bg-tm-surface-2 p-1"
+    >
+      {[
+        { label: 'Não', value: false },
+        { label: 'Sim', value: true },
+      ].map((option) => (
+        <button
+          key={String(option.value)}
+          type="button"
+          aria-pressed={value === option.value}
+          disabled={disabled}
+          onClick={() => onChange(option.value)}
+          className={`min-w-[64px] rounded-tm-sm px-3 py-1.5 text-tm-sm font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+            value === option.value
+              ? 'bg-tm-primary text-white shadow-tm-card'
+              : 'text-tm-fg-muted hover:bg-tm-surface hover:text-tm-fg'
+          }`}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function HistoryQuestion({
+  title,
+  helper,
+  value,
+  onChange,
+  detailLabel,
+  detailValue,
+  onDetailChange,
+  placeholder,
+  disabled,
+}: {
+  title: string
+  helper: string
+  value: boolean
+  onChange: (value: boolean) => void
+  detailLabel: string
+  detailValue: string
+  onDetailChange: (value: string) => void
+  placeholder: string
+  disabled?: boolean
+}) {
+  return (
+    <div className="p-4 sm:p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h4 className="text-tm-base font-bold text-tm-fg">{title}</h4>
+          <p className="mt-0.5 text-tm-sm leading-relaxed text-tm-fg-muted">{helper}</p>
+        </div>
+        <BooleanChoice label={title} value={value} onChange={onChange} disabled={disabled} />
+      </div>
+
+      {value && (
+        <div className="mt-4 border-t border-tm-border pt-4">
+          <TextareaField
+            label={detailLabel}
+            value={detailValue}
+            onChange={onDetailChange}
+            placeholder={placeholder}
+            disabled={disabled}
+            rows={2}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function FichaClinicalFields({ value, onChange, disabled }: FichaClinicalFieldsProps) {
   const set = <K extends keyof FichaClinicalValues>(field: K, fieldValue: FichaClinicalValues[K]) => {
     onChange({ ...value, [field]: fieldValue })
@@ -98,63 +185,50 @@ export function FichaClinicalFields({ value, onChange, disabled }: FichaClinical
         </div>
       </section>
 
-      <section className="flex flex-col gap-4 rounded-tm-input border border-tm-border bg-tm-surface-2 p-4">
-        <div>
+      <section className="overflow-hidden rounded-tm-input border border-tm-border bg-tm-surface">
+        <div className="border-b border-tm-border bg-tm-surface-2 px-4 py-4 sm:px-5">
           <h3 className="text-tm-lg font-bold text-tm-fg">Histórico clínico</h3>
-          <p className="text-tm-sm text-tm-fg-muted">As respostas vêm preenchidas com os dados da última ficha concluída.</p>
+          <p className="mt-0.5 text-tm-sm text-tm-fg-muted">
+            Revise as informações recuperadas da última ficha concluída e atualize somente o que mudou.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Select
-            label="Possui comorbidades?"
-            value={String(value.possuiComorbidades)}
-            onChange={(nextValue) => booleanSelect('possuiComorbidades', nextValue)}
-            options={BOOLEAN_OPTIONS}
+        <div className="divide-y divide-tm-border">
+          <HistoryQuestion
+            title="Comorbidades"
+            helper="O paciente possui alguma condição clínica associada?"
+            value={value.possuiComorbidades}
+            onChange={(nextValue) => booleanSelect('possuiComorbidades', String(nextValue))}
+            detailLabel="Quais comorbidades?"
+            detailValue={value.comorbidadesDescricao}
+            onDetailChange={(nextValue) => set('comorbidadesDescricao', nextValue)}
+            placeholder="Descreva as comorbidades relevantes"
             disabled={disabled}
           />
-          {value.possuiComorbidades && (
-            <TextareaField
-              label="Quais comorbidades?"
-              value={value.comorbidadesDescricao}
-              onChange={(nextValue) => set('comorbidadesDescricao', nextValue)}
-              placeholder="Descreva as comorbidades"
-              disabled={disabled}
-            />
-          )}
 
-          <Select
-            label="Possui sequelas?"
-            value={String(value.possuiSequelas)}
-            onChange={(nextValue) => booleanSelect('possuiSequelas', nextValue)}
-            options={BOOLEAN_OPTIONS}
+          <HistoryQuestion
+            title="Sequelas"
+            helper="Há alguma sequela relevante para o atendimento atual?"
+            value={value.possuiSequelas}
+            onChange={(nextValue) => booleanSelect('possuiSequelas', String(nextValue))}
+            detailLabel="Quais sequelas?"
+            detailValue={value.sequelasDescricao}
+            onDetailChange={(nextValue) => set('sequelasDescricao', nextValue)}
+            placeholder="Descreva as sequelas relevantes"
             disabled={disabled}
           />
-          {value.possuiSequelas && (
-            <TextareaField
-              label="Quais sequelas?"
-              value={value.sequelasDescricao}
-              onChange={(nextValue) => set('sequelasDescricao', nextValue)}
-              placeholder="Descreva as sequelas"
-              disabled={disabled}
-            />
-          )}
 
-          <Select
-            label="Usa medicamentos?"
-            value={String(value.usaMedicamentos)}
-            onChange={(nextValue) => booleanSelect('usaMedicamentos', nextValue)}
-            options={BOOLEAN_OPTIONS}
+          <HistoryQuestion
+            title="Medicamentos em uso"
+            helper="O paciente faz uso contínuo ou atual de medicamentos?"
+            value={value.usaMedicamentos}
+            onChange={(nextValue) => booleanSelect('usaMedicamentos', String(nextValue))}
+            detailLabel="Quais medicamentos?"
+            detailValue={value.medicamentosDescricao}
+            onDetailChange={(nextValue) => set('medicamentosDescricao', nextValue)}
+            placeholder="Informe nomes, doses e frequência, se souber"
             disabled={disabled}
           />
-          {value.usaMedicamentos && (
-            <TextareaField
-              label="Quais medicamentos?"
-              value={value.medicamentosDescricao}
-              onChange={(nextValue) => set('medicamentosDescricao', nextValue)}
-              placeholder="Informe nomes, doses e frequência"
-              disabled={disabled}
-            />
-          )}
         </div>
       </section>
 
