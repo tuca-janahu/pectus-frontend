@@ -55,4 +55,3 @@ export const TM_NAV_ITEMS: NavItem[] = [
   { id: 'perfil', label: 'Perfil', path: '/perfil', icon: <IconUser size={20} /> },
   { id: 'devs', label: 'Devs', path: '/devs', icon: <IconUsers size={20} /> },
 ]
-

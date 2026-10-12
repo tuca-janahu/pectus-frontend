@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { IconButton } from '../components/ui'
-import { IconBell, IconMenu } from '../components/icons'
+import { IconBell, IconMenu, IconUsers } from '../components/icons'
 
 export interface TopBarProps {
   title: string
@@ -23,6 +24,8 @@ export function TopBar({
   dense = false,
   children,
 }: TopBarProps) {
+  const navigate = useNavigate()
+
   return (
     <header
       className={`relative overflow-hidden ${dense ? 'px-5 py-3.5' : 'px-6 pt-5 pb-6'} ${
@@ -55,6 +58,15 @@ export function TopBar({
           )}
           <div className={`font-bold tracking-[-0.02em] ${dense ? 'text-tm-2xl' : 'text-tm-4xl'}`}>{title}</div>
         </div>
+
+        {/* Ícone de Criadores */}
+        <IconButton
+          icon={<IconUsers size={20} />}
+          label="Criadores do Projeto"
+          onClick={() => navigate('/devs')}
+          variant={gradient ? 'onDark' : 'light'}
+        />
+
         {onNotifications && (
           <div className="relative">
             <IconButton
