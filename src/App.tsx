@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate, matchPath } from 'react-router-dom'
 import { AppShell, TM_NAV_ITEMS, type RouteId } from './shell'
 import { TM_NOTIFICATIONS } from './data/notifications'
-import { DesignTokensPage } from './pages/DesignTokensPage'
+import { HomePage } from './pages/HomePage'
 import { ScreenPlaceholder } from './pages/ScreenPlaceholder'
 import { AdminPage } from './pages/AdminPage'
 import { LogsPage } from './pages/LogsPage'
@@ -97,7 +97,7 @@ function AuthenticatedApp() {
             path={item.id === 'fichas' ? '/fichas/*' : item.path}
             element={
               item.id === 'home' ? (
-                <DesignTokensPage />
+                <HomePage />
               ) : item.id === 'admin' ? (
                 <AdminPage />
               ) : item.id === 'busca' ? (

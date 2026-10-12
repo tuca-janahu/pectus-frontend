@@ -110,7 +110,7 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
       map.get(f.data)!.push(f)
     })
     return [...map.entries()]
-      .sort((a, b) => a[0].localeCompare(b[0]))
+      .sort((a, b) => b[0].localeCompare(a[0]))
       .map(([data, items]) => ({ data, items: items.sort((a, b) => a.hora.localeCompare(b.hora)) }))
   }, [fichas, filtro])
 
