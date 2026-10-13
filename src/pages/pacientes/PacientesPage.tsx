@@ -70,7 +70,7 @@ export function PacientesPage({ searchTerm = '', onCountChange }: PacientesPageP
         <button
           type="button"
           onClick={() => setShowForm(true)}
-          className="flex w-full items-center justify-between rounded-tm-card bg-[linear-gradient(135deg,var(--tm-primary),var(--tm-primary-deep))] p-4 text-white shadow-tm-card transition hover:shadow-tm-card-hover"
+          className="flex w-full items-center justify-between rounded-tm-card bg-[linear-gradient(135deg,var(--tm-primary),var(--tm-primary-deep))] p-4 text-white shadow-tm-card transition hover:shadow-tm-card-hover cursor-pointer"
         >
           <div className="flex items-center gap-4">
             <div className="flex items-center justify-center rounded-tm-sm bg-white/20 p-2">

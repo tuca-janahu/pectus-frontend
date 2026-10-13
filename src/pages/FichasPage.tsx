@@ -182,8 +182,8 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
             key={f.id}
             type="button"
             onClick={() => setFiltro(f.id)}
-            className={`rounded-tm-sm px-3.5 py-2 text-tm-sm font-semibold transition-all ${
-              filtro === f.id ? 'bg-tm-surface text-tm-primary-deep shadow-tm-card' : 'text-tm-fg-muted'
+            className={`rounded-tm-sm px-3.5 py-2 text-tm-sm font-semibold transition-all  ${
+              filtro === f.id ? 'bg-tm-surface text-tm-primary-deep shadow-tm-card' : 'text-tm-fg-muted cursor-pointer'
             }`}
           >
             {f.label}

@@ -45,7 +45,7 @@ export function Sidebar({ route, onNavigate, onLogout, collapsed = false, onTogg
             onClick={onToggle}
             aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'}
             title={collapsed ? 'Expandir menu' : 'Recolher menu'}
-            className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border-none bg-transparent text-tm-fg-muted transition-colors duration-150 hover:bg-tm-surface-2 ${
+            className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border-none bg-transparent text-tm-fg-muted transition-colors duration-150 hover:bg-tm-surface-2 cursor-pointer ${
               collapsed ? '-order-1' : 'order-3'
             }`}
           >
