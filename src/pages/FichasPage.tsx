@@ -138,7 +138,10 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
   }
 
   const handleSaved = async () => {
-    await carregarFichas()
+    await Promise.all([
+    carregarFichas(),
+    carregarPacientes(),
+  ])
     backToList()
   }
 
