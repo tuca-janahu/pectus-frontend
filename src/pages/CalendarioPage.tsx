@@ -357,7 +357,7 @@ export function CalendarioPage() {
                 dispararOAuthCalendar()
               }}
               disabled={conectando}
-              className="shrink-0 font-semibold bg-white dark:bg-tm-surface border border-tm-border text-tm-fg hover:bg-tm-surface-2 shadow-sm"
+              className="shrink-0"
             >
               {conectando ? 'Conectando...' : 'Conectar'}
             </Button>
@@ -400,7 +400,7 @@ export function CalendarioPage() {
 
               {/* POPUP / SELETOR RÁPIDO DE MÊS E ANO */}
               {seletorAberto && (
-                <div className="absolute left-0 top-full z-30 mt-2 w-[280px] rounded-tm-card border border-tm-border bg-tm-surface p-4 shadow-2xl sm:w-[320px] text-tm-fg animate-in fade-in zoom-in-95 duration-150">
+                <div className="absolute left-0 top-full z-30 mt-2 w-[280px] rounded-tm-card border border-tm-border bg-tm-surface p-4 shadow-lg sm:w-[320px] text-tm-fg animate-in fade-in zoom-in-95 duration-150">
                   {/* Seletor de Ano */}
                   <div className="mb-3 flex items-center justify-between border-b border-tm-border pb-2.5">
                     <button
@@ -411,7 +411,7 @@ export function CalendarioPage() {
                     >
                       <IconChevronLeft size={18} />
                     </button>
-                    <span className="font-mono text-tm-lg font-bold text-tm-fg">{anoSeletor}</span>
+                    <span className="text-tm-lg font-bold text-tm-fg">{anoSeletor}</span>
                     <button
                       type="button"
                       onClick={() => setAnoSeletor((a) => a + 1)}
@@ -433,7 +433,7 @@ export function CalendarioPage() {
                           onClick={() => selecionarMesAno(index, anoSeletor)}
                           className={`cursor-pointer rounded-tm-button py-2 text-center text-tm-sm font-semibold transition-colors ${
                             isMesAtivo
-                              ? 'bg-tm-primary text-white shadow-sm'
+                              ? 'bg-tm-primary text-white shadow-tm-card'
                               : 'text-tm-fg hover:bg-tm-surface-2'
                           }`}
                         >
@@ -498,14 +498,14 @@ export function CalendarioPage() {
                     dia.mesAtual ? 'bg-tm-surface' : 'bg-tm-surface-2/40 text-tm-fg-subtle'
                   } ${
                     isSelecionado
-                      ? 'border-2 border-tm-primary bg-[color-mix(in_oklch,var(--tm-primary)_9%,var(--tm-surface))] rounded-xl shadow-sm z-10 m-[-1px]'
+                      ? 'border-2 border-tm-primary bg-[color-mix(in_oklch,var(--tm-primary)_9%,var(--tm-surface))] rounded-tm-card shadow-tm-card z-10 m-[-1px]'
                       : 'hover:bg-tm-surface-2'
                   }`}
                 >
                   {/* Badge numérico circular de notificação com cor idêntica ao sino do sistema */}
                   {quantidadeConsultas > 0 && (
                     <span
-                      className="absolute top-2 right-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[oklch(0.65_0.18_25)] px-1.5 text-[11px] font-bold text-white shadow-sm"
+                      className="absolute top-2 right-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-tm-badge-count-bg px-1.5 text-tm-xs font-bold text-white shadow-tm-card"
                       title={`${quantidadeConsultas} consulta(s) agendada(s)`}
                     >
                       {quantidadeConsultas}
@@ -516,7 +516,7 @@ export function CalendarioPage() {
                   <span
                     className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-tm-sm font-semibold transition-transform ${
                       dia.isHoje
-                        ? 'bg-tm-primary text-white shadow-sm'
+                        ? 'bg-tm-primary text-white shadow-tm-card'
                         : isSelecionado
                           ? 'font-bold text-tm-primary text-tm-base'
                           : dia.mesAtual

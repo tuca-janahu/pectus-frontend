@@ -64,7 +64,7 @@ export function TopBar({
               variant={gradient ? 'onDark' : 'light'}
             />
             {notificationCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-tm-primary-deep bg-[oklch(0.65_0.18_25)] px-[5px] text-[10px] font-bold text-white">
+              <span className="absolute -top-0.5 -right-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-tm-primary-deep bg-tm-badge-count-bg px-[5px] text-tm-2xs font-bold text-white">
                 {notificationCount}
               </span>
             )}

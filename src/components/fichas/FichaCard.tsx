@@ -58,9 +58,9 @@ export function FichaCard({
       <div className="flex items-center gap-1">
         {onEdit && (
           <IconButton
-            icon={<IconEdit size={17} className="cursor-pointer transition-colors hover:text-blue-600" />}
+            icon={<IconEdit size={17} className="cursor-pointer transition-colors" />}
             label="Editar"
-            className="cursor-pointer transition-colors hover:text-blue-600 hover:bg-blue-50/60 dark:hover:bg-tm-surface-2"
+            className="cursor-pointer transition-colors hover:bg-[color-mix(in_oklch,var(--tm-primary)_12%,transparent)] hover:text-tm-primary"
             onClick={(e) => {
               e.stopPropagation()
               onEdit()

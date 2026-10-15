@@ -106,6 +106,9 @@
   --tm-error-text: oklch(0.5 0.16 25);
   --tm-error-border: oklch(0.65 0.16 25);
   --tm-focus-ring: color-mix(in oklch, var(--tm-primary) 16%, transparent);
+
+  /* --- Badge de contagem (sino de notificações, dias com fichas no calendário) --- */
+  --tm-badge-count-bg: oklch(0.65 0.18 25);
 }
 
 /* Manual dark mode — the prototype toggles this attribute from its Tweaks
@@ -195,6 +198,7 @@
   --color-tm-error-text: var(--tm-error-text);
   --color-tm-error-border: var(--tm-error-border);
   --color-tm-focus-ring: var(--tm-focus-ring);
+  --color-tm-badge-count-bg: var(--tm-badge-count-bg);
 
   --radius-tm-card: var(--tm-radius-card);
   --radius-tm-button: var(--tm-radius-button);
