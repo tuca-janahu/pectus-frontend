@@ -9,6 +9,7 @@ export interface IconButtonProps {
   size?: number
   variant?: IconButtonVariant
   style?: CSSProperties
+  className?: string
 }
 
 const VARIANTS: Record<IconButtonVariant, string> = {
@@ -17,12 +18,12 @@ const VARIANTS: Record<IconButtonVariant, string> = {
   onDark: 'bg-[rgb(255_255_255_/_0.14)] text-white border border-[rgb(255_255_255_/_0.22)]',
 }
 
-export function IconButton({ icon, label, onClick, size = 36, variant = 'ghost', style }: IconButtonProps) {
+export function IconButton({ icon, label, onClick, size = 36, variant = 'ghost', style, className }: IconButtonProps) {
   return (
     <button
       onClick={onClick}
       aria-label={label}
-      className={`inline-flex items-center justify-center rounded-tm-sm cursor-pointer transition-all duration-[180ms] ease-in-out ${VARIANTS[variant]}`}
+      className={`inline-flex items-center justify-center rounded-tm-sm cursor-pointer transition-all duration-[180ms] ease-in-out ${VARIANTS[variant]} ${className ?? ''}`}
       style={{ width: size, height: size, ...style }}
     >
       {icon}

@@ -35,7 +35,7 @@ export const TM_NAV_ITEMS: NavItem[] = [
     label: 'Calendário',
     path: '/calendario',
     icon: <IconCalendar size={20} />,
-    subtitle: 'Agenda e Google Calendar',
+    subtitle: 'Visão mensal das fichas',
   },
   {
     id: 'busca',

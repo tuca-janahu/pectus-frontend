@@ -16,6 +16,7 @@ import { useAuth } from './auth/AuthContext'
 import { PacientesPage } from './pages/pacientes/PacientesPage'
 import { PacienteDetailsPage } from './pages/pacientes/PacienteDetailsPage'
 import { FichasPage } from './pages/FichasPage'
+import { CalendarioPage } from './pages/CalendarioPage'
 import { IconSearch, IconFilter } from './components/icons'
 
 function routeIdFromPathname(pathname: string): RouteId {
@@ -107,6 +108,8 @@ function AuthenticatedApp() {
                 />
               ) : item.id === 'fichas' ? (
                 <FichasPage onCountChange={setFichasCount} />
+              ) : item.id === 'calendario' ? (
+                <CalendarioPage />
               ) : item.id === 'logs' ? (
                 <LogsPage />
               ) : item.id === 'perfil' ? (
