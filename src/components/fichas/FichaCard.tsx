@@ -58,8 +58,9 @@ export function FichaCard({
       <div className="flex items-center gap-1">
         {onEdit && (
           <IconButton
-            icon={<IconEdit size={17} />}
+            icon={<IconEdit size={17} className="cursor-pointer transition-colors hover:text-blue-600" />}
             label="Editar"
+            className="cursor-pointer transition-colors hover:text-blue-600 hover:bg-blue-50/60 dark:hover:bg-tm-surface-2"
             onClick={(e) => {
               e.stopPropagation()
               onEdit()
@@ -68,8 +69,9 @@ export function FichaCard({
         )}
         {onDelete && (
           <IconButton
-            icon={<IconTrash size={17} />}
+            icon={<IconTrash size={17} className="cursor-pointer transition-colors" />}
             label="Cancelar ficha"
+            className="cursor-pointer transition-colors hover:text-tm-danger-fg hover:bg-tm-danger-bg"
             onClick={(e) => {
               e.stopPropagation()
               onDelete()

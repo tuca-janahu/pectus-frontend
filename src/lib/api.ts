@@ -346,3 +346,24 @@ export function updatePaciente(
     body: JSON.stringify(input),
   }).then((res) => parseJsonOrThrow<{ paciente: PacienteResumo }>(res))
 }
+
+export interface GoogleCalendarStatus {
+  conectado: boolean
+}
+
+export function getGoogleCalendarStatus(accessToken: string): Promise<GoogleCalendarStatus> {
+  return fetch(`${API_URL}/auth/google/calendar-status`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  }).then((res) => parseJsonOrThrow<GoogleCalendarStatus>(res))
+}
+
+export function connectGoogleCalendar(accessToken: string, code: string): Promise<{ message: string }> {
+  return fetch(`${API_URL}/auth/google/calendar-connect`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ code }),
+  }).then((res) => parseJsonOrThrow<{ message: string }>(res))
+}

@@ -71,14 +71,14 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
   const [loading, setLoading] = useState(true)
 
   const pathname = location.pathname.replace(/\/+$/, '') || '/'
-  const editMatch = matchPath('/fichas/:id/editar', pathname)
+  const editMatch = matchPath('/fichas/:id/editar', pathname) ?? matchPath('/fichas/editar/:id', pathname)
   const editingId = editMatch ? Number(editMatch.params.id) : undefined
   const editingFicha = editingId ? fichas.find((ficha) => ficha.id === editingId) : undefined
   const searchParams = new URLSearchParams(location.search)
   const pacienteIdParam = Number(searchParams.get('pacienteId'))
   const pacienteIdInicial = Number.isInteger(pacienteIdParam) && pacienteIdParam > 0 ? pacienteIdParam : undefined
   const retornoParam = searchParams.get('retorno')
-  const retorno = retornoParam?.startsWith('/pacientes/') ? retornoParam : '/fichas'
+  const retorno = retornoParam?.startsWith('/pacientes/') || retornoParam === '/calendario' ? retornoParam : '/fichas'
 
   const carregarFichas = useCallback(async () => {
     if (!accessToken) return
