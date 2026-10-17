@@ -64,7 +64,7 @@ export function Sidebar({ route, onNavigate, onLogout, collapsed = false, onTogg
       </div>
 
       <div className="flex flex-1 flex-col gap-0.5">
-        {TM_NAV_ITEMS.map((item) => {
+        {TM_NAV_ITEMS.filter((item) => item.id !== 'devs').map((item) => {
           const active = route === item.id
           return (
             <button

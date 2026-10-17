@@ -16,7 +16,7 @@ export const DEVS_LIST: Dev[] = [
     name: 'Andrei Rehem',
     role: 'Desenvolvedor / Engenharia da Computação',
     type: 'aluno',
-    foto: 'https://via.placeholder.com/150', // Substitua pela foto do Andrei
+    foto: 'https://via.placeholder.com/150',
     email: 'andrei@senaicimatec.com',
     github: 'https://github.com/andreirehem',
     linkedin: 'https://linkedin.com/in/andreirehem'
@@ -43,10 +43,10 @@ export const DEVS_LIST: Dev[] = [
   },
   {
     id: 4,
-    name: 'Felipe de Souza Lucas',
+    name: 'Felipe Lucas',
     role: 'Gestão / Engenharia de Controle e Automação',
     type: 'aluno',
-    foto: 'https://via.placeholder.com/150',
+    foto: '/felipe.jpeg', // <--- Foto na pasta public e alterado para jpeg
     email: 'felipe@senaicimatec.com',
     github: 'https://github.com/aluno4',
     linkedin: 'https://linkedin.com/in/aluno4'
@@ -66,21 +66,21 @@ export const DEVS_LIST: Dev[] = [
   {
     id: 6,
     name: 'Prof. Guilherme Souza',
-    role: 'Orientador de Gestão',
+    role: 'Orientador de Gestão de Projeto',
     type: 'professor',
-    foto: 'https://via.placeholder.com/150'
+    foto: '/guilherme.jpg' // <--- Foto na pasta public
   },
   {
     id: 7,
     name: 'Prof. Michell Thompson',
-    role: 'Orientador de Gestão',
+    role: 'Orientador de Gestão de Projeto',
     type: 'professor',
-    foto: 'https://via.placeholder.com/150'
+    foto: '/michell.jpg' // <--- Foto na pasta public
   },
   {
     id: 8,
     name: 'Prof. Ariel Menezes',
-    role: 'Orientador Técnico',
+    role: 'Orientador de Execução Técnica',
     type: 'professor',
     foto: 'https://via.placeholder.com/150'
   }

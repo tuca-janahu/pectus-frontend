@@ -7,11 +7,20 @@ export function DevsPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Seção dos Alunos */}
+      {/* Seção dos Alunos com a Logo da Universidade */}
       <section className="mb-12">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">
-          Equipe de Desenvolvimento
-        </h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 border-b border-gray-800 pb-3 gap-4">
+          <h2 className="text-2xl font-bold text-gray-800">
+            Equipe de Desenvolvimento
+          </h2>
+          {/* Logo SENAI CIMATEC */}
+          <img 
+            src="/cimatec-logo.png" 
+            alt="Logo SENAI CIMATEC" 
+            className="h-10 sm:h-12 object-contain self-start sm:self-auto"
+          />
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
           {alunos.map(dev => (
             <div 
@@ -50,8 +59,8 @@ export function DevsPage() {
       </section>
 
       {/* Seção dos Professores */}
-      <section>
-        <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">
+      <section className="mb-12">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b border-gray-800 pb-2">
           Orientadores
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -71,10 +80,19 @@ export function DevsPage() {
           ))}
         </div>
       </section>
+
+      {/* Seção Sobre o Projeto (Rodapé Institucional) */}
+      <section className="pt-8 border-t border-gray-800">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center max-w-4xl mx-auto">
+          <h3 className="text-base font-bold text-gray-800 mb-2">Sobre o Projeto</h3>
+          <p className="text-sm text-gray-600 leading-relaxed">
+            O sistema PECTUS é resultado de um projeto desenvolvido por uma equipe de estudantes do curso de Engenharia de Computação e de Engenharia de Controle e Automação da Universidade SENAI CIMATEC, no âmbito da Trilha Técnico-Gestor.
+          </p>
+        </div>
+      </section>
     </div>
   );
 }
 
-// Exportações adicionais para evitar qualquer erro de importação nas rotas
 export { DevsPage as Devs };
 export default DevsPage;
