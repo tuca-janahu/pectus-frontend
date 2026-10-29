@@ -21,6 +21,10 @@ function initialsFromName(name: string): string {
 export function Sidebar({ route, onNavigate, onLogout, collapsed = false, onToggle, theme = 'light', onToggleTheme }: SidebarProps) {
   const { user } = useAuth()
   const name = user?.nome ?? ''
+  const isAdmin = user?.roles.includes('ADMIN') ?? false
+  const visibleNavItems = TM_NAV_ITEMS.filter(
+    (item) => !item.adminOnly || isAdmin,
+  )
   const subtitle = user?.medico?.crm ?? (user?.roles.includes('ADMIN') ? 'Administrador' : user?.email ?? '')
   const initials = initialsFromName(name)
   const themeToggle = onToggleTheme && (
@@ -64,7 +68,7 @@ export function Sidebar({ route, onNavigate, onLogout, collapsed = false, onTogg
       </div>
 
       <div className="flex flex-1 flex-col gap-0.5">
-        {TM_NAV_ITEMS.map((item) => {
+        {visibleNavItems.map((item) => {
           const active = route === item.id
           return (
             <button

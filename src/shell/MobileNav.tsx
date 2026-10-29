@@ -1,4 +1,5 @@
 import { TM_NAV_ITEMS, type RouteId } from './navItems'
+import { useAuth } from '../auth/AuthContext'
 
 export interface MobileNavProps {
   route: RouteId
@@ -6,15 +7,19 @@ export interface MobileNavProps {
 }
 
 export function MobileNav({ route, onNavigate }: MobileNavProps) {
+  const { user } = useAuth()
+  const isAdmin = user?.roles.includes('ADMIN') ?? false
+  const visibleNavItems = TM_NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin)
+
   return (
     <nav
       className="sticky bottom-0 z-[5] grid border-t border-tm-border bg-tm-surface px-1 pt-1.5"
       style={{
-        gridTemplateColumns: `repeat(${TM_NAV_ITEMS.length}, 1fr)`,
+        gridTemplateColumns: `repeat(${visibleNavItems.length}, 1fr)`,
         paddingBottom: 'max(8px, env(safe-area-inset-bottom))',
       }}
     >
-      {TM_NAV_ITEMS.map((item) => {
+      {visibleNavItems.map((item) => {
         const active = route === item.id
         return (
           <button
