@@ -42,9 +42,10 @@ interface FichaFormProps {
   dataInicial?: string
   onCancel: () => void
   onSuccess: (ficha: Ficha) => void
+  onStarted?: (ficha: Ficha) => void
 }
 
-export function FichaForm({ ficha, pacienteIdInicial, dataInicial, onCancel, onSuccess }: FichaFormProps) {
+export function FichaForm({ ficha, pacienteIdInicial, dataInicial, onCancel, onSuccess, onStarted }: FichaFormProps) {
   const isEditing = !!ficha
   const { accessToken, user } = useAuth()
 
@@ -104,6 +105,7 @@ export function FichaForm({ ficha, pacienteIdInicial, dataInicial, onCancel, onS
     setLoading(true)
     try {
       const iniciado = await iniciarAtendimento(accessToken, ficha.id)
+      onStarted?.(iniciado)
       setStatus('pendente')
       setClinical(clinicalValuesFromFicha(iniciado))
       setSituacao(iniciado.situacao)

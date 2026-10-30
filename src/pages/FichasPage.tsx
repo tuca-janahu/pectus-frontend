@@ -133,7 +133,8 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
     if (!accessToken || startingId !== null) return
     setStartingId(ficha.id)
     try {
-      await iniciarAtendimento(accessToken, ficha.id)
+      const iniciado = await iniciarAtendimento(accessToken, ficha.id)
+      setFichas((atuais) => atuais.map((item) => item.id === iniciado.id ? iniciado : item))
       toastSuccess('Atendimento iniciado. Preencha a ficha clínica.')
       openEdit(ficha)
     } catch (error) {
@@ -193,7 +194,8 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
       return <Navigate to="/fichas" replace />
     }
 
-    return <FichaForm ficha={editingFicha} onCancel={backToList} onSuccess={handleSaved} />
+    return <FichaForm ficha={editingFicha} onCancel={backToList} onSuccess={handleSaved}
+      onStarted={(iniciado) => setFichas((atuais) => atuais.map((item) => item.id === iniciado.id ? iniciado : item))} />
   }
 
   if (pathname !== '/fichas') {
