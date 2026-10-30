@@ -52,7 +52,7 @@ type Filtro = 'todas' | 'agendada' | 'concluida'
 const FILTROS: { id: Filtro; label: string }[] = [
   { id: 'todas', label: 'Todas' },
   { id: 'agendada', label: 'Agendadas' },
-  { id: 'concluida', label: 'Concluídas' },
+          { id: 'concluida', label: 'Concluídos' },
 ]
 
 export interface FichasPageProps {
@@ -62,7 +62,7 @@ export interface FichasPageProps {
 export function FichasPage({ onCountChange }: FichasPageProps) {
   const navigate = useNavigate()
   const location = useLocation()
-  const { accessToken } = useAuth()
+  const { accessToken, user } = useAuth()
 
   const [filtro, setFiltro] = useState<Filtro>('todas')
 
@@ -90,7 +90,7 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
   const carregarPacientes = useCallback(async () => {
     if (!accessToken) return
     try {
-      const { pacientes: lista } = await listPacientes(accessToken)
+      const { pacientes: lista } = await listPacientes(accessToken, undefined, true)
       setPacientes(lista)
     } catch (err) {
       toastError(err instanceof ApiError ? err.message : 'Não foi possível carregar os pacientes.')
@@ -125,6 +125,7 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
   const handleDelete = async (ficha: Ficha) => {
     try {
       if (!accessToken) return
+      if (!window.confirm('Cancelar este atendimento? Esta ação não poderá ser revertida.')) return
       await deleteFicha(accessToken, ficha.id)
       toastSuccess('Ficha cancelada.')
       await carregarFichas()
@@ -200,7 +201,7 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
             <div className="inline-flex h-9 w-9 items-center justify-center rounded-tm-sm bg-tm-primary text-white">
               <IconPlus size={20} />
             </div>
-            <div className="text-tm-md font-semibold text-tm-fg">Nova ficha</div>
+            <div className="text-tm-md font-semibold text-tm-fg">Novo atendimento</div>
           </div>
         </Card>
         <Card style={{ padding: 14, cursor: 'pointer' }} onClick={() => navigate('/calendario')}>
@@ -238,7 +239,7 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
                   )}
                   <div className="h-px flex-1 bg-tm-border" />
                   <span className="text-tm-sm text-tm-fg-subtle">
-                    {items.length} {items.length === 1 ? 'ficha' : 'fichas'}
+                    {items.length} {items.length === 1 ? 'atendimento' : 'atendimentos'}
                   </span>
                 </div>
                 <div className="flex flex-col gap-2">
@@ -252,9 +253,9 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
                         iniciais={p ? obterIniciais(p.nome) : '?'}
                         avatarColor={AVATAR_COLORS[f.pacienteId % AVATAR_COLORS.length]}
                         fotoUrl={p?.fotoUrl}
-                        onClick={f.status === 'agendada' || f.status === 'pendente' ? () => openEdit(f) : undefined}
-                        onEdit={f.status === 'agendada' || f.status === 'pendente' ? () => openEdit(f) : undefined}
-                        onDelete={f.status === 'agendada' || f.status === 'pendente' ? () => handleDelete(f) : undefined}
+                        onClick={(f.status === 'concluida' && user?.roles.includes('MEDICO')) || ((f.status === 'agendada' || f.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === f.medicoId)) ? () => openEdit(f) : undefined}
+                        onEdit={(f.status === 'concluida' && user?.roles.includes('MEDICO')) || ((f.status === 'agendada' || f.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === f.medicoId)) ? () => openEdit(f) : undefined}
+                        onDelete={(f.status === 'agendada' || f.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === f.medicoId) ? () => handleDelete(f) : undefined}
                       />
                     )
                   })}

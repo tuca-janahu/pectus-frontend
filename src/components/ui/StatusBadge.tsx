@@ -2,17 +2,17 @@ export type FichaStatus = 'agendada' | 'concluida' | 'cancelada' | 'pendente'
 
 const STATUS_MAP: Record<FichaStatus, { label: string; classes: string; dotClass: string }> = {
   agendada: {
-    label: 'Agendada',
+    label: 'Agendado',
     classes: 'bg-tm-status-agendada-bg text-tm-status-agendada-fg',
     dotClass: 'bg-tm-status-agendada-dot',
   },
   concluida: {
-    label: 'Concluída',
+    label: 'Concluído',
     classes: 'bg-tm-status-concluida-bg text-tm-status-concluida-fg',
     dotClass: 'bg-tm-status-concluida-dot',
   },
   cancelada: {
-    label: 'Cancelada',
+    label: 'Cancelado',
     classes: 'bg-tm-status-cancelada-bg text-tm-status-cancelada-fg',
     dotClass: 'bg-tm-status-cancelada-dot',
   },

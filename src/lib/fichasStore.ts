@@ -7,26 +7,15 @@ type ApiStatus = 'AGENDADA' | 'EM_PREENCHIMENTO' | 'CONCLUIDA' | 'CANCELADA'
 
 interface ApiFicha {
   id: number
-  pacienteId: number
+  ficha: FichaClinicalValues & { pacienteId: number; situacao: 'EM_TRATAMENTO' | 'FORA_DE_TRATAMENTO'; motivoEncerramento: 'ALTA' | 'ABANDONO' | 'OBITO' | null; dataEncerramento: string | null }
   medicoId: number
   dataHoraPrevista: string
   status: ApiStatus
   procedimento: string | null
+  procedimentoOutro: string | null
   observacoes: string | null
-  mecanismoLesao: string | null
-  dataInjuriaTraqueal: string | null
-  vocaliza: boolean
-  traqueostomizado: boolean
-  possuiComorbidades: boolean
-  comorbidadesDescricao: string | null
-  possuiSequelas: boolean
-  sequelasDescricao: string | null
-  usaMedicamentos: boolean
-  medicamentosDescricao: string | null
-  possuiLaringoscopia: boolean
-  achadoLaringoscopia: string | null
-  particularidades: string | null
   criadoEm: string
+  historico: Array<{ tipo: string; em: string; autorContaId: number; campos: Record<string, unknown> }>
 }
 
 export interface FichaClinicalValues {
@@ -86,11 +75,16 @@ export interface Ficha extends FichaClinicalValues {
   data: string
   hora: string
   procedimento: string
+  procedimentoOutro: string
   status: FichaStatus
   descricao: string
   modo: 'previa' | 'ao-vivo'
   criadoEm: string
   statusApi: ApiStatus
+  historico: ApiFicha['historico']
+  situacao: 'EM_TRATAMENTO' | 'FORA_DE_TRATAMENTO'
+  motivoEncerramento: 'ALTA' | 'ABANDONO' | 'OBITO' | null
+  dataEncerramento: string | null
 }
 
 export interface FichaInput extends Partial<FichaClinicalValues> {
@@ -98,6 +92,7 @@ export interface FichaInput extends Partial<FichaClinicalValues> {
   data: string
   hora: string
   procedimento: string
+  procedimentoOutro?: string
   status: FichaStatus
   descricao: string
   modo?: 'previa' | 'ao-vivo'
@@ -128,29 +123,34 @@ function paraFicha(api: ApiFicha, modo: Ficha['modo'] = 'previa'): Ficha {
   const hora = `${String(dataHora.getHours()).padStart(2, '0')}:${String(dataHora.getMinutes()).padStart(2, '0')}`
   return {
     id: api.id,
-    pacienteId: api.pacienteId,
+    pacienteId: api.ficha.pacienteId,
     medicoId: api.medicoId,
     data,
     hora,
     procedimento: api.procedimento ?? 'Atendimento clínico',
     status: statusParaTela(api.status),
+    procedimentoOutro: api.procedimentoOutro ?? '',
     descricao: api.observacoes ?? '',
-    mecanismoLesao: api.mecanismoLesao ?? '',
-    dataInjuriaTraqueal: api.dataInjuriaTraqueal?.slice(0, 10) ?? '',
-    vocaliza: api.vocaliza,
-    traqueostomizado: api.traqueostomizado,
-    possuiComorbidades: api.possuiComorbidades,
-    comorbidadesDescricao: api.comorbidadesDescricao ?? '',
-    possuiSequelas: api.possuiSequelas,
-    sequelasDescricao: api.sequelasDescricao ?? '',
-    usaMedicamentos: api.usaMedicamentos,
-    medicamentosDescricao: api.medicamentosDescricao ?? '',
-    possuiLaringoscopia: api.possuiLaringoscopia,
-    achadoLaringoscopia: api.achadoLaringoscopia ?? '',
-    particularidades: api.particularidades ?? '',
+    mecanismoLesao: api.ficha.mecanismoLesao ?? '',
+    dataInjuriaTraqueal: api.ficha.dataInjuriaTraqueal?.slice(0, 10) ?? '',
+    vocaliza: api.ficha.vocaliza,
+    traqueostomizado: api.ficha.traqueostomizado,
+    possuiComorbidades: api.ficha.possuiComorbidades,
+    comorbidadesDescricao: api.ficha.comorbidadesDescricao ?? '',
+    possuiSequelas: api.ficha.possuiSequelas,
+    sequelasDescricao: api.ficha.sequelasDescricao ?? '',
+    usaMedicamentos: api.ficha.usaMedicamentos,
+    medicamentosDescricao: api.ficha.medicamentosDescricao ?? '',
+    possuiLaringoscopia: api.ficha.possuiLaringoscopia,
+    achadoLaringoscopia: api.ficha.achadoLaringoscopia ?? '',
+    particularidades: api.ficha.particularidades ?? '',
     modo,
     criadoEm: api.criadoEm,
     statusApi: api.status,
+    historico: api.historico ?? [],
+    situacao: api.ficha.situacao,
+    motivoEncerramento: api.ficha.motivoEncerramento,
+    dataEncerramento: api.ficha.dataEncerramento,
   }
 }
 
@@ -187,41 +187,72 @@ function camposClinicosPayload(input: FichaInput): Record<string, string | boole
 }
 
 export async function listFichas(accessToken: string): Promise<Ficha[]> {
-  const { fichas } = await request<{ fichas: ApiFicha[] }>(accessToken, '/fichas-epicriticas')
-  return fichas.map((ficha) => paraFicha(ficha))
+  const { atendimentos } = await request<{ atendimentos: ApiFicha[] }>(accessToken, '/atendimentos')
+  return atendimentos.map((atendimento) => paraFicha(atendimento))
+}
+
+export async function listProcedimentos(accessToken: string): Promise<Array<{ nome: string; descricao: string }>> {
+  const { procedimentos } = await request<{ procedimentos: Array<{ nome: string; descricao: string }> }>(accessToken, '/procedimentos')
+  return procedimentos
+}
+
+export async function listAtendimentosPaciente(accessToken: string, pacienteId: number): Promise<Ficha[]> {
+  const { atendimentos } = await request<{ atendimentos: ApiFicha[] }>(accessToken, `/atendimentos?pacienteId=${pacienteId}`)
+  return atendimentos.map((atendimento) => paraFicha(atendimento))
+}
+
+export interface FichaLongitudinal extends FichaClinicalValues {
+  id: number
+  pacienteId: number
+  situacao: 'EM_TRATAMENTO' | 'FORA_DE_TRATAMENTO'
+  motivoEncerramento: 'ALTA' | 'ABANDONO' | 'OBITO' | null
+  dataEncerramento: string | null
+}
+
+export async function getFichaPaciente(accessToken: string, pacienteId: number): Promise<FichaLongitudinal> {
+  const { ficha } = await request<{ ficha: FichaLongitudinal }>(accessToken, `/pacientes/${pacienteId}/ficha`)
+  return ficha
+}
+
+export async function alterarSituacaoFicha(accessToken: string, atendimentoId: number, situacao: Ficha['situacao'], motivoEncerramento: Ficha['motivoEncerramento'], dataEncerramento: string | null): Promise<void> {
+  await request(accessToken, `/atendimentos/${atendimentoId}/situacao`, {
+    method: 'POST', body: JSON.stringify({ situacao, motivoEncerramento, dataEncerramento }),
+  })
 }
 
 export async function createFicha(accessToken: string, medicoId: number, input: FichaInput): Promise<Ficha> {
   const iniciarAgora = input.status === 'pendente' || input.status === 'concluida'
-  let { ficha } = await request<{ ficha: ApiFicha }>(accessToken, '/fichas-epicriticas', {
+  let { atendimento: ficha } = await request<{ atendimento: ApiFicha }>(accessToken, '/atendimentos', {
     method: 'POST',
     body: JSON.stringify({
       pacienteId: input.pacienteId,
       medicoId,
       dataHoraPrevista: dataHoraIso(input),
       procedimento: input.procedimento,
+      procedimentoOutro: input.procedimento === 'Outro' ? input.procedimentoOutro : null,
       observacoes: input.descricao || null,
       iniciarAgora,
     }),
   })
 
   if (iniciarAgora && Object.keys(camposClinicosPayload(input)).length > 0) {
-    ;({ ficha } = await request<{ ficha: ApiFicha }>(accessToken, `/fichas-epicriticas/${ficha.id}`, {
+    ;({ atendimento: ficha } = await request<{ atendimento: ApiFicha }>(accessToken, `/atendimentos/${ficha.id}`, {
       method: 'PATCH',
       body: JSON.stringify({
         procedimento: input.procedimento,
+        procedimentoOutro: input.procedimento === 'Outro' ? input.procedimentoOutro : null,
         observacoes: input.descricao || null,
-        ...camposClinicosPayload(input),
+        clinico: camposClinicosPayload(input),
       }),
     }))
   }
 
   if (input.status === 'concluida') {
-    ;({ ficha } = await request<{ ficha: ApiFicha }>(accessToken, `/fichas-epicriticas/${ficha.id}/concluir`, {
+    ;({ atendimento: ficha } = await request<{ atendimento: ApiFicha }>(accessToken, `/atendimentos/${ficha.id}/concluir`, {
       method: 'POST',
     }))
   } else if (input.status === 'cancelada') {
-    ;({ ficha } = await request<{ ficha: ApiFicha }>(accessToken, `/fichas-epicriticas/${ficha.id}/cancelar`, {
+    ;({ atendimento: ficha } = await request<{ atendimento: ApiFicha }>(accessToken, `/atendimentos/${ficha.id}/cancelar`, {
       method: 'POST',
     }))
   }
@@ -235,47 +266,61 @@ export async function updateFicha(
   id: number,
   input: FichaInput,
 ): Promise<Ficha> {
-  let { ficha } = await request<{ ficha: ApiFicha }>(accessToken, `/fichas-epicriticas/${id}`)
-  if (ficha.status === 'CONCLUIDA' || ficha.status === 'CANCELADA') {
+  let { atendimento: ficha } = await request<{ atendimento: ApiFicha }>(accessToken, `/atendimentos/${id}`)
+  if (ficha.status === 'CONCLUIDA') {
+    ;({ atendimento: ficha } = await request<{ atendimento: ApiFicha }>(accessToken, `/atendimentos/${id}/corrigir`, {
+      method: 'POST',
+      body: JSON.stringify({
+        procedimento: input.procedimento,
+        procedimentoOutro: input.procedimento === 'Outro' ? input.procedimentoOutro : null,
+        observacoes: input.descricao || null,
+        clinico: camposClinicosPayload(input),
+      }),
+    }))
+    return paraFicha(ficha, input.modo)
+  }
+  if (ficha.status === 'CANCELADA') {
     throw new Error('Fichas concluídas ou canceladas não podem ser alteradas.')
   }
 
   if (input.status === 'cancelada') {
-    ;({ ficha } = await request<{ ficha: ApiFicha }>(accessToken, `/fichas-epicriticas/${id}/cancelar`, {
+    ;({ atendimento: ficha } = await request<{ atendimento: ApiFicha }>(accessToken, `/atendimentos/${id}/cancelar`, {
       method: 'POST',
     }))
     return paraFicha(ficha, input.modo)
   }
 
   if (ficha.status === 'AGENDADA') {
-    ;({ ficha } = await request<{ ficha: ApiFicha }>(accessToken, `/fichas-epicriticas/${id}/agendamento`, {
+    ;({ atendimento: ficha } = await request<{ atendimento: ApiFicha }>(accessToken, `/atendimentos/${id}/agendamento`, {
       method: 'PATCH',
       body: JSON.stringify({
         medicoId,
         dataHoraPrevista: dataHoraIso(input),
         procedimento: input.procedimento,
+        procedimentoOutro: input.procedimento === 'Outro' ? input.procedimentoOutro : null,
         observacoes: input.descricao || null,
       }),
     }))
     if (input.status === 'agendada') return paraFicha(ficha, input.modo)
-    ;({ ficha } = await request<{ ficha: ApiFicha }>(accessToken, `/fichas-epicriticas/${id}/iniciar`, {
+    ;({ atendimento: ficha } = await request<{ atendimento: ApiFicha }>(accessToken, `/atendimentos/${id}/iniciar`, {
       method: 'POST',
     }))
   } else if (input.status === 'agendada') {
     throw new Error('Uma ficha iniciada não pode voltar para agendada.')
   }
 
-  ;({ ficha } = await request<{ ficha: ApiFicha }>(accessToken, `/fichas-epicriticas/${id}`, {
+  ;({ atendimento: ficha } = await request<{ atendimento: ApiFicha }>(accessToken, `/atendimentos/${id}`, {
     method: 'PATCH',
     body: JSON.stringify({
       procedimento: input.procedimento,
+      procedimentoOutro: input.procedimento === 'Outro' ? input.procedimentoOutro : null,
       observacoes: input.descricao || null,
-      ...camposClinicosPayload(input),
+      clinico: camposClinicosPayload(input),
     }),
   }))
 
   if (input.status === 'concluida') {
-    ;({ ficha } = await request<{ ficha: ApiFicha }>(accessToken, `/fichas-epicriticas/${id}/concluir`, {
+    ;({ atendimento: ficha } = await request<{ atendimento: ApiFicha }>(accessToken, `/atendimentos/${id}/concluir`, {
       method: 'POST',
     }))
   }
@@ -283,5 +328,40 @@ export async function updateFicha(
 }
 
 export async function deleteFicha(accessToken: string, id: number): Promise<void> {
-  await request(accessToken, `/fichas-epicriticas/${id}/cancelar`, { method: 'POST' })
+  await request(accessToken, `/atendimentos/${id}/cancelar`, { method: 'POST' })
+}
+
+export interface MidiaAtendimento {
+  id: number
+  atendimentoId: number
+  nomeOriginal: string
+  mimeType: string
+  tamanhoBytes: number
+  url: string
+}
+
+export async function listMidias(accessToken: string, atendimentoId: number): Promise<MidiaAtendimento[]> {
+  const { midias } = await request<{ midias: MidiaAtendimento[] }>(accessToken, `/atendimentos/${atendimentoId}/midias`)
+  return midias
+}
+
+export async function uploadMidia(accessToken: string, atendimentoId: number, arquivo: File): Promise<MidiaAtendimento> {
+  const formData = new FormData()
+  formData.append('arquivo', arquivo)
+  const response = await fetch(`${API_URL}/atendimentos/${atendimentoId}/midias`, {
+    method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body: formData,
+  })
+  const body = await response.json().catch(() => ({}))
+  if (!response.ok) throw new Error(body?.error ?? 'Falha ao enviar mídia')
+  return body.midia as MidiaAtendimento
+}
+
+export async function removerMidia(accessToken: string, atendimentoId: number, midiaId: number): Promise<void> {
+  const response = await fetch(`${API_URL}/atendimentos/${atendimentoId}/midias/${midiaId}`, {
+    method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}))
+    throw new Error(body?.error ?? 'Falha ao remover mídia')
+  }
 }

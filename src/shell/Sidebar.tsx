@@ -62,7 +62,7 @@ export function Sidebar({ route, onNavigate, onLogout, collapsed = false, onTogg
         {!collapsed && (
           <div className="flex min-w-0 flex-1 flex-col">
             <span className="text-tm-lg font-bold tracking-[-0.01em] text-tm-fg">Pectus</span>
-            <span className="text-tm-xs font-medium text-tm-fg-subtle">Fichas epicríticas</span>
+            <span className="text-tm-xs font-medium text-tm-fg-subtle">Prontuário longitudinal</span>
           </div>
         )}
       </div>

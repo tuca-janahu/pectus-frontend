@@ -168,7 +168,7 @@ export function HomePage() {
     ? 'Atualizando sua agenda'
     : error
       ? 'Os dados da agenda estão indisponíveis'
-      : `${agenda.deHoje.length} ${agenda.deHoje.length === 1 ? 'ficha hoje' : 'fichas hoje'} · ${agenda.proximas.length} ${
+      : `${agenda.deHoje.length} ${agenda.deHoje.length === 1 ? 'atendimento hoje' : 'atendimentos hoje'} · ${agenda.proximas.length} ${
           agenda.proximas.length === 1 ? 'próxima' : 'próximas'
         }`
 
@@ -197,7 +197,7 @@ export function HomePage() {
             icon={<IconPlus size={16} />}
             onClick={() => navigate('/fichas/nova')}
           >
-            Nova ficha
+            Novo atendimento
           </Button>
         </div>
       </header>
@@ -216,7 +216,7 @@ export function HomePage() {
             </div>
             {!loading && !error && totalAgenda > 0 && (
               <span className="shrink-0 rounded-full bg-tm-surface-2 px-2.5 py-1 text-tm-xs font-semibold text-tm-fg-muted">
-                {totalAgenda} {totalAgenda === 1 ? 'ficha' : 'fichas'}
+                {totalAgenda} {totalAgenda === 1 ? 'atendimento' : 'atendimentos'}
               </span>
             )}
           </div>

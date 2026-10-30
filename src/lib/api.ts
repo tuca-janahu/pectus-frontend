@@ -233,6 +233,7 @@ export interface PacienteResumo {
   fotoUrl: string | null
   inativadoEm: string | null
   criadoEm: string
+  historicoCadastral?: Array<{ em: string; autorContaId: number | null; campos: Record<string, { antes: unknown; depois: unknown }> }>
 }
 
 export interface CreatePacienteInput {
@@ -244,8 +245,11 @@ export interface CreatePacienteInput {
   telefones?: string[]
 }
 
-export function listPacientes(accessToken: string, nome?: string): Promise<{ pacientes: PacienteResumo[] }> {
-  const query = nome ? `?nome=${encodeURIComponent(nome)}` : ''
+export function listPacientes(accessToken: string, nome?: string, incluirInativos = false): Promise<{ pacientes: PacienteResumo[] }> {
+  const params = new URLSearchParams()
+  if (nome) params.set('nome', nome)
+  if (incluirInativos) params.set('incluirInativos', 'true')
+  const query = params.size ? `?${params.toString()}` : ''
   return fetch(`${API_URL}/pacientes${query}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   }).then((res) => parseJsonOrThrow<{ pacientes: PacienteResumo[] }>(res))

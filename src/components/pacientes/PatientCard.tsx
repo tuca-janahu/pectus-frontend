@@ -39,7 +39,7 @@ export function PatientCard({
         <div>
           <h3 className="font-tm-body text-tm-base font-semibold text-tm-fg">{nome}</h3>
           <p className="font-tm-body text-tm-sm text-tm-fg-muted">
-            {idade} anos • {fichas} {fichas === 1 ? 'ficha' : 'fichas'}
+            {idade} anos • {fichas} {fichas === 1 ? 'atendimento' : 'atendimentos'}
           </p>
         </div>
       </div>

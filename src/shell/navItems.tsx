@@ -45,17 +45,17 @@ export const TM_NAV_ITEMS: NavItem[] = [
   },
   {
     id: "fichas",
-    label: "Fichas",
+    label: "Atendimentos",
     path: "/fichas",
     icon: <IconList size={20} />,
-    subtitle: "Fichas epicríticas",
+    subtitle: "Histórico e agenda clínica",
   },
   {
     id: "calendario",
     label: "Calendário",
     path: "/calendario",
     icon: <IconCalendar size={20} />,
-    subtitle: "Visão mensal das fichas",
+    subtitle: "Visão mensal dos atendimentos",
   },
   {
     id: "busca",

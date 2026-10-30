@@ -1,14 +1,14 @@
-import { useMemo, useState } from 'react'
-import { Avatar, Button, Card, Select } from '../ui'
+import { useEffect, useMemo, useState } from 'react'
+import { Avatar, Button, Card, Input, Select } from '../ui'
 import type { AvatarColor } from '../ui'
 import { IconCheck, IconClose, IconStethoscope } from '../icons'
 import { PatientPicker } from './PatientPicker'
 import { FichaClinicalFields } from './FichaClinicalFields'
-import { PROCEDIMENTOS } from '../../data/procedimentos'
 import {
   EMPTY_CLINICAL_VALUES,
   clinicalValuesFromFicha,
   createFicha,
+  listProcedimentos,
   deleteFicha,
   updateFicha,
   type Ficha,
@@ -17,6 +17,7 @@ import {
 import type { PacienteResumo } from '../../lib/api'
 import { toastError, toastSuccess } from '../../lib/toast'
 import { useAuth } from '../../auth/AuthContext'
+import { AtendimentoMidias } from './AtendimentoMidias'
 
 const AVATAR_COLORS: AvatarColor[] = ['sky', 'teal', 'violet', 'rose', 'amber']
 
@@ -42,12 +43,19 @@ export function FichaAoVivo({ pacienteIdInicial, onCancel, onSuccess }: FichaAoV
   const { accessToken, user } = useAuth()
   const [pacienteId, setPacienteId] = useState<number | ''>(pacienteIdInicial ?? '')
   const [pacientes, setPacientes] = useState<PacienteResumo[]>([])
+  const [procedimentos, setProcedimentos] = useState<Array<{ nome: string; descricao: string }>>([])
   const [procedimento, setProcedimento] = useState('')
+  const [procedimentoOutro, setProcedimentoOutro] = useState('')
   const [observacoes, setObservacoes] = useState('')
   const [clinical, setClinical] = useState<FichaClinicalValues>({ ...EMPTY_CLINICAL_VALUES })
   const [draft, setDraft] = useState<Ficha | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!accessToken) return
+    listProcedimentos(accessToken).then(setProcedimentos).catch((error) => toastError(error.message))
+  }, [accessToken])
 
   const data = useMemo(() => hojeISO(), [])
   const hora = useMemo(() => new Date().toTimeString().slice(0, 5), [])
@@ -57,6 +65,7 @@ export function FichaAoVivo({ pacienteIdInicial, onCancel, onSuccess }: FichaAoV
   const validarContexto = () => {
     if (!pacienteId) return 'Selecione um paciente.'
     if (!procedimento) return 'Selecione o procedimento.'
+    if (procedimento === 'Outro' && !procedimentoOutro.trim()) return 'Especifique o procedimento.'
     if (!accessToken || !user?.medico?.id) return 'Seu usuário não possui um perfil médico ativo.'
     return null
   }
@@ -76,6 +85,7 @@ export function FichaAoVivo({ pacienteIdInicial, onCancel, onSuccess }: FichaAoV
         data,
         hora,
         procedimento,
+        procedimentoOutro,
         status: 'pendente',
         descricao: '',
         modo: 'ao-vivo',
@@ -83,7 +93,7 @@ export function FichaAoVivo({ pacienteIdInicial, onCancel, onSuccess }: FichaAoV
       setDraft(ficha)
       setClinical(clinicalValuesFromFicha(ficha))
       setObservacoes(ficha.descricao)
-      toastSuccess('Atendimento iniciado com os dados da última ficha.')
+      toastSuccess('Atendimento iniciado com os dados da ficha longitudinal.')
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Não foi possível iniciar o atendimento.')
     } finally {
@@ -100,12 +110,13 @@ export function FichaAoVivo({ pacienteIdInicial, onCancel, onSuccess }: FichaAoV
         data: draft.data,
         hora: draft.hora,
         procedimento,
+        procedimentoOutro,
         status: concluir ? 'concluida' : 'pendente',
         descricao: observacoes,
         modo: 'ao-vivo',
         ...clinical,
       })
-      toastSuccess(concluir ? 'Ficha concluída com sucesso.' : 'Rascunho salvo com sucesso.')
+      toastSuccess(concluir ? 'Atendimento concluído com sucesso.' : 'Rascunho salvo com sucesso.')
       onSuccess(ficha)
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Não foi possível salvar a ficha.')
@@ -119,6 +130,7 @@ export function FichaAoVivo({ pacienteIdInicial, onCancel, onSuccess }: FichaAoV
       onCancel()
       return
     }
+    if (!window.confirm('Cancelar este atendimento? Esta ação não poderá ser revertida.')) return
     setLoading(true)
     try {
       await deleteFicha(accessToken, draft.id)
@@ -140,7 +152,7 @@ export function FichaAoVivo({ pacienteIdInicial, onCancel, onSuccess }: FichaAoV
           </div>
           <div className="flex-1">
             <h2 className="text-tm-xl font-bold text-tm-fg">Iniciar atendimento</h2>
-            <p className="text-tm-sm text-tm-fg-muted">A ficha será preenchida com os dados da última consulta concluída.</p>
+            <p className="text-tm-sm text-tm-fg-muted">Os dados clínicos atuais da ficha serão carregados para este atendimento.</p>
           </div>
         </div>
         <div className="flex flex-col gap-4 p-5">
@@ -160,10 +172,11 @@ export function FichaAoVivo({ pacienteIdInicial, onCancel, onSuccess }: FichaAoV
               setProcedimento(value)
               setError('')
             }}
-            options={PROCEDIMENTOS.map((item) => ({ value: item, label: item }))}
+            options={procedimentos.map((item) => ({ value: item.nome, label: item.nome }))}
             placeholder="Selecione o procedimento"
             disabled={loading}
           />
+          {procedimento === 'Outro' && <Input label="Especifique o procedimento" value={procedimentoOutro} onChange={(event) => setProcedimentoOutro(event.target.value)} disabled={loading} required />}
           {error && <div className="text-tm-sm font-medium text-tm-error-text">{error}</div>}
           <div className="flex justify-end gap-2.5 border-t border-tm-border pt-4">
             <Button variant="secondary" onClick={onCancel} disabled={loading}>Voltar</Button>
@@ -194,9 +207,10 @@ export function FichaAoVivo({ pacienteIdInicial, onCancel, onSuccess }: FichaAoV
           label="Procedimento"
           value={procedimento}
           onChange={setProcedimento}
-          options={PROCEDIMENTOS.map((item) => ({ value: item, label: item }))}
+          options={procedimentos.map((item) => ({ value: item.nome, label: item.nome }))}
           disabled={loading}
         />
+        {procedimento === 'Outro' && <Input label="Especifique o procedimento" value={procedimentoOutro} onChange={(event) => setProcedimentoOutro(event.target.value)} disabled={loading} required />}
 
         <FichaClinicalFields value={clinical} onChange={setClinical} disabled={loading} />
 
@@ -212,10 +226,12 @@ export function FichaAoVivo({ pacienteIdInicial, onCancel, onSuccess }: FichaAoV
           />
         </label>
 
+        <AtendimentoMidias atendimentoId={draft.id} podeEditar />
+
         <div className="flex flex-wrap justify-end gap-2.5 border-t border-tm-border pt-4">
           <Button variant="secondary" onClick={() => salvar(false)} disabled={loading}>Salvar rascunho</Button>
           <Button onClick={() => salvar(true)} icon={<IconCheck size={16} />} disabled={loading}>
-            {loading ? 'Salvando...' : 'Concluir ficha'}
+            {loading ? 'Salvando...' : 'Concluir atendimento'}
           </Button>
         </div>
       </div>

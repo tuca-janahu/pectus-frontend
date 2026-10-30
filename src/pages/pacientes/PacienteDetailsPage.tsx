@@ -19,7 +19,8 @@ import { obterIniciais, calcularIdadeAnos } from '../../lib/pacienteFormat'
 import { toastError, toastSuccess } from '../../lib/toast'
 import { PatientForm } from '../../components/pacientes/PatientForm'
 import { FichaCard } from '../../components/fichas/FichaCard'
-import { deleteFicha, listFichas, type Ficha } from '../../lib/fichasStore'
+import { AtendimentoMidias } from '../../components/fichas/AtendimentoMidias'
+import { deleteFicha, getFichaPaciente, listAtendimentosPaciente, type Ficha, type FichaLongitudinal } from '../../lib/fichasStore'
 
 const AVATAR_COLORS: AvatarColor[] = ['sky', 'teal', 'violet', 'rose', 'amber']
 const FOTO_MIME_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp']
@@ -64,13 +65,21 @@ function formatarTelefone(tel?: string | null): string {
   return tel
 }
 
+function descreverMudanca(valor: unknown): string {
+  if (valor && typeof valor === 'object' && 'antes' in valor && 'depois' in valor) {
+    return `${JSON.stringify(valor.antes)} → ${JSON.stringify(valor.depois)}`
+  }
+  return JSON.stringify(valor) ?? ''
+}
+
 export function PacienteDetailsPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { accessToken } = useAuth()
+  const { accessToken, user } = useAuth()
 
   const [paciente, setPaciente] = useState<PacienteResumo | null>(null)
   const [fichas, setFichas] = useState<Ficha[]>([])
+  const [fichaLongitudinal, setFichaLongitudinal] = useState<FichaLongitudinal | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadingFichas, setLoadingFichas] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
@@ -125,10 +134,13 @@ export function PacienteDetailsPage() {
     if (!accessToken || !id) return
     setLoadingFichas(true)
     try {
-      const lista = await listFichas(accessToken)
+      const [lista, clinica] = await Promise.all([
+        listAtendimentosPaciente(accessToken, Number(id)),
+        getFichaPaciente(accessToken, Number(id)),
+      ])
+      setFichaLongitudinal(clinica)
       setFichas(
         lista
-          .filter((ficha) => ficha.pacienteId === Number(id))
           .sort((a, b) => `${b.data}T${b.hora}`.localeCompare(`${a.data}T${a.hora}`)),
       )
     } catch (err) {
@@ -156,6 +168,7 @@ export function PacienteDetailsPage() {
 
   const cancelarFicha = async (ficha: Ficha) => {
     if (!accessToken) return
+    if (!window.confirm('Cancelar este atendimento? Esta ação não poderá ser revertida.')) return
     try {
       await deleteFicha(accessToken, ficha.id)
       toastSuccess('Ficha cancelada.')
@@ -298,6 +311,21 @@ export function PacienteDetailsPage() {
         </div>
 
         <div className="flex flex-col gap-6 lg:col-span-2">
+          {fichaLongitudinal && (
+            <Card>
+              <h3 className="mb-2 text-tm-base font-semibold text-tm-fg">Ficha clínica longitudinal</h3>
+              <p className="text-tm-sm text-tm-fg-muted">
+                {fichaLongitudinal.situacao === 'EM_TRATAMENTO'
+                  ? 'Em tratamento'
+                  : `Fora de tratamento — ${fichaLongitudinal.motivoEncerramento ?? ''} em ${formatarData(fichaLongitudinal.dataEncerramento)}`}
+              </p>
+              <p className="mt-2 text-tm-sm text-tm-fg-muted">
+                Injúria traqueal: {formatarData(fichaLongitudinal.dataInjuriaTraqueal)} ·
+                Vocaliza: {fichaLongitudinal.vocaliza ? 'Sim' : 'Não'} ·
+                Traqueostomizado: {fichaLongitudinal.traqueostomizado ? 'Sim' : 'Não'}
+              </p>
+            </Card>
+          )}
           <Card>
             <div className="mb-4 flex items-center gap-2 border-b border-tm-border pb-3">
               <IconUser size={20} className="text-tm-primary" />
@@ -334,16 +362,25 @@ export function PacienteDetailsPage() {
                 <span className="text-tm-sm font-medium text-tm-fg">{formatarData(paciente.criadoEm)}</span>
               </div>
             </div>
+            {!!paciente.historicoCadastral?.length && <details className="mt-4 text-tm-sm text-tm-fg-muted">
+              <summary className="cursor-pointer">Histórico de alterações cadastrais</summary>
+              {paciente.historicoCadastral.map((evento, index) => <div key={index} className="mt-2 border-t border-tm-border pt-2">
+                {new Date(evento.em).toLocaleString('pt-BR')} · Usuário #{evento.autorContaId ?? 'não identificado'}
+                {Object.entries(evento.campos).map(([campo, mudanca]) => <span key={campo} className="block pl-3">
+                  {campo}: {descreverMudanca(mudanca)}
+                </span>)}
+              </div>)}
+            </details>}
           </Card>
 
           <Card>
             <div className="mb-3 flex items-center justify-between border-b border-tm-border pb-3">
               <div className="flex items-center gap-2">
                 <IconActivity size={20} className="text-tm-primary" />
-                <h3 className="text-tm-base font-semibold text-tm-fg">Fichas e Atendimentos</h3>
+                <h3 className="text-tm-base font-semibold text-tm-fg">Histórico de atendimentos</h3>
               </div>
-              <Button size="sm" icon={<IconPlus size={16} />} onClick={abrirNovaFicha}>
-                Nova ficha
+              <Button size="sm" icon={<IconPlus size={16} />} onClick={abrirNovaFicha} disabled={fichaLongitudinal?.motivoEncerramento === 'OBITO'}>
+                Novo atendimento
               </Button>
             </div>
             {loadingFichas ? (
@@ -363,10 +400,22 @@ export function PacienteDetailsPage() {
                       iniciais={obterIniciais(paciente.nome)}
                       avatarColor={avatarColor}
                       fotoUrl={imagemSrc}
-                      onClick={ficha.status === 'agendada' || ficha.status === 'pendente' ? () => editarFicha(ficha) : undefined}
-                      onEdit={ficha.status === 'agendada' || ficha.status === 'pendente' ? () => editarFicha(ficha) : undefined}
-                      onDelete={ficha.status === 'agendada' || ficha.status === 'pendente' ? () => cancelarFicha(ficha) : undefined}
+                      onClick={(ficha.status === 'concluida' && user?.roles.includes('MEDICO')) || ((ficha.status === 'agendada' || ficha.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === ficha.medicoId)) ? () => editarFicha(ficha) : undefined}
+                      onEdit={(ficha.status === 'concluida' && user?.roles.includes('MEDICO')) || ((ficha.status === 'agendada' || ficha.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === ficha.medicoId)) ? () => editarFicha(ficha) : undefined}
+                      onDelete={(ficha.status === 'agendada' || ficha.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === ficha.medicoId) ? () => cancelarFicha(ficha) : undefined}
                     />
+                    <details className="rounded-tm-card border border-tm-border px-3 py-2 text-tm-sm text-tm-fg-muted">
+                      <summary className="cursor-pointer">Detalhes, alterações e mídias</summary>
+                      <p className="mt-2">Procedimento: {ficha.procedimento}{ficha.procedimentoOutro ? ` — ${ficha.procedimentoOutro}` : ''}</p>
+                      {ficha.descricao && <p>Observações: {ficha.descricao}</p>}
+                      {ficha.historico.map((evento, index) => <p key={index} className="mt-2">
+                        {new Date(evento.em).toLocaleString('pt-BR')} · {evento.tipo} · Usuário #{evento.autorContaId}
+                        {Object.entries(evento.campos).map(([campo, mudanca]) => <span key={campo} className="block pl-3">
+                          {campo}: {descreverMudanca(mudanca)}
+                        </span>)}
+                      </p>)}
+                      <AtendimentoMidias atendimentoId={ficha.id} podeEditar={false} />
+                    </details>
                   </div>
                 ))}
               </div>

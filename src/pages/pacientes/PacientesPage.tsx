@@ -22,6 +22,7 @@ export function PacientesPage({ searchTerm = '', onCountChange }: PacientesPageP
   const navigate = useNavigate()
   const { accessToken } = useAuth()
   const [showForm, setShowForm] = useState(false)
+  const [incluirInativos, setIncluirInativos] = useState(false)
 
   const [pacientes, setPacientes] = useState<PacienteResumo[]>([])
   const [fichasPorPaciente, setFichasPorPaciente] = useState<Record<number, number>>({})
@@ -34,7 +35,7 @@ export function PacientesPage({ searchTerm = '', onCountChange }: PacientesPageP
     setLoading(true)
     setError('')
     try {
-      const { pacientes: lista } = await listPacientes(accessToken, searchTerm || undefined)
+      const { pacientes: lista } = await listPacientes(accessToken, searchTerm || undefined, incluirInativos)
       setPacientes(lista)
       onCountChange?.(lista.length)
     } catch (err) {
@@ -44,7 +45,7 @@ export function PacientesPage({ searchTerm = '', onCountChange }: PacientesPageP
     } finally {
       setLoading(false)
     }
-  }, [accessToken, searchTerm, onCountChange])
+  }, [accessToken, searchTerm, incluirInativos, onCountChange])
 
   useEffect(() => {
     carregarPacientes()
@@ -66,6 +67,10 @@ export function PacientesPage({ searchTerm = '', onCountChange }: PacientesPageP
   }, [accessToken])
   return (
     <div className="flex flex-col gap-6 text-tm-fg">
+      <label className="inline-flex items-center gap-2 self-start text-tm-sm text-tm-fg-muted">
+        <input type="checkbox" checked={incluirInativos} onChange={(event) => setIncluirInativos(event.target.checked)} />
+        Incluir pacientes inativos
+      </label>
       {!showForm && (
         <button
           type="button"

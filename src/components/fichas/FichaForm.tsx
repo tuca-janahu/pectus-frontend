@@ -4,11 +4,13 @@ import type { DropdownOption } from '../ui'
 import { IconArrowLeft, IconCheck, IconClipboard, IconClose, IconEdit, IconUser, IconUserPlus } from '../icons'
 import { PatientFormFields } from '../pacientes/PatientFormFields'
 import { usePatientForm } from '../pacientes/usePatientForm'
-import { PROCEDIMENTOS, STATUS_OPTIONS } from '../../data/procedimentos'
+import { STATUS_OPTIONS } from '../../data/procedimentos'
 import {
   EMPTY_CLINICAL_VALUES,
   clinicalValuesFromFicha,
+  alterarSituacaoFicha,
   createFicha,
+  listProcedimentos,
   updateFicha,
   type Ficha,
   type FichaClinicalValues,
@@ -19,6 +21,7 @@ import { useAuth } from '../../auth/AuthContext'
 import { listPacientes, ApiError, type PacienteResumo } from '../../lib/api'
 import { toastError, toastSuccess } from '../../lib/toast'
 import { FichaClinicalFields } from './FichaClinicalFields'
+import { AtendimentoMidias } from './AtendimentoMidias'
 
 function hojeISO(): string {
   return new Date().toISOString().slice(0, 10)
@@ -49,14 +52,19 @@ export function FichaForm({ ficha, pacienteIdInicial, onCancel, onSuccess }: Fic
   const [modoPaciente, setModoPaciente] = useState<'existente' | 'novo'>('existente')
   const [pacienteId, setPacienteId] = useState<number | ''>(ficha?.pacienteId ?? pacienteIdInicial ?? '')
   const [pacientes, setPacientes] = useState<PacienteResumo[]>([])
+  const [procedimentos, setProcedimentos] = useState<Array<{ nome: string; descricao: string }>>([])
   const [loadingPacientes, setLoadingPacientes] = useState(true)
   const novoPacienteForm = usePatientForm()
 
   const [data, setData] = useState(ficha?.data || hojeISO())
   const [hora, setHora] = useState(ficha?.hora || '09:00')
   const [procedimento, setProcedimento] = useState(ficha?.procedimento || '')
+  const [procedimentoOutro, setProcedimentoOutro] = useState(ficha?.procedimentoOutro || '')
   const [status, setStatus] = useState<FichaStatus>(ficha?.status || 'agendada')
   const [descricao, setDescricao] = useState(ficha?.descricao || '')
+  const [situacao, setSituacao] = useState<Ficha['situacao']>(ficha?.situacao ?? 'EM_TRATAMENTO')
+  const [motivoEncerramento, setMotivoEncerramento] = useState<Ficha['motivoEncerramento']>(ficha?.motivoEncerramento ?? null)
+  const [dataEncerramento, setDataEncerramento] = useState(ficha?.dataEncerramento?.slice(0, 10) ?? '')
   const [clinical, setClinical] = useState<FichaClinicalValues>(
     ficha ? clinicalValuesFromFicha(ficha) : { ...EMPTY_CLINICAL_VALUES },
   )
@@ -80,6 +88,11 @@ export function FichaForm({ ficha, pacienteIdInicial, onCancel, onSuccess }: Fic
     carregarPacientes()
   }, [carregarPacientes])
 
+  useEffect(() => {
+    if (!accessToken) return
+    listProcedimentos(accessToken).then(setProcedimentos).catch((error) => toastError(error.message))
+  }, [accessToken])
+
   const pacienteOptions: DropdownOption[] = pacientes.map((p) => ({
     value: p.id,
     label: `${p.nome} — ${calcularIdade(p.dataNascimento)} anos`,
@@ -96,6 +109,11 @@ export function FichaForm({ ficha, pacienteIdInicial, onCancel, onSuccess }: Fic
     }
     if (!data) err.data = 'Informe a data'
     if (!procedimento) err.procedimento = 'Selecione o procedimento'
+    if (procedimento === 'Outro' && !procedimentoOutro.trim()) err.procedimento = 'Especifique o procedimento'
+    if (situacao === 'FORA_DE_TRATAMENTO' && (!motivoEncerramento || !dataEncerramento)) {
+      toastError('Informe motivo e data para a situação fora de tratamento.')
+      return
+    }
     setError(err)
     if (Object.keys(err).length) return
 
@@ -113,6 +131,7 @@ export function FichaForm({ ficha, pacienteIdInicial, onCancel, onSuccess }: Fic
         data,
         hora,
         procedimento,
+        procedimentoOutro,
         status,
         descricao,
         modo: ficha?.modo ?? 'previa',
@@ -122,7 +141,10 @@ export function FichaForm({ ficha, pacienteIdInicial, onCancel, onSuccess }: Fic
       const salva = isEditing
         ? await updateFicha(accessToken, user.medico.id, ficha.id, input)
         : await createFicha(accessToken, user.medico.id, input)
-      toastSuccess(isEditing ? 'Ficha atualizada com sucesso.' : 'Ficha criada com sucesso.')
+      if (isEditing && (situacao !== ficha.situacao || motivoEncerramento !== ficha.motivoEncerramento || dataEncerramento !== (ficha.dataEncerramento?.slice(0, 10) ?? ''))) {
+        await alterarSituacaoFicha(accessToken, salva.id, situacao, situacao === 'EM_TRATAMENTO' ? null : motivoEncerramento, situacao === 'EM_TRATAMENTO' ? null : dataEncerramento)
+      }
+      toastSuccess(isEditing ? 'Atendimento atualizado com sucesso.' : 'Atendimento agendado com sucesso.')
       onSuccess(salva)
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Não foi possível salvar. Tente novamente.')
@@ -131,7 +153,7 @@ export function FichaForm({ ficha, pacienteIdInicial, onCancel, onSuccess }: Fic
     }
   }
 
-  const submitLabel = isEditing ? 'Salvar alterações' : modoPaciente === 'novo' ? 'Criar paciente e ficha' : 'Criar ficha'
+  const submitLabel = isEditing ? 'Salvar alterações' : modoPaciente === 'novo' ? 'Criar paciente e agendar' : 'Agendar atendimento'
 
   return (
     <div className="flex flex-col gap-4">
@@ -141,16 +163,16 @@ export function FichaForm({ ficha, pacienteIdInicial, onCancel, onSuccess }: Fic
         className="inline-flex items-center gap-2 self-start rounded-tm-sm text-tm-sm font-medium text-tm-fg-muted transition-colors hover:text-tm-primary"
       >
         <IconArrowLeft size={16} />
-        Voltar para a lista de fichas
+        Voltar para os atendimentos
       </button>
-      <Card padded={false} style={{ overflow: 'hidden', borderColor: 'color-mix(in oklch, var(--tm-primary) 35%, var(--tm-border))' }}>
+      <Card padded={false} style={{ borderColor: 'color-mix(in oklch, var(--tm-primary) 35%, var(--tm-border))' }}>
         <div className="flex items-center gap-3 border-b border-tm-border bg-[color-mix(in_oklch,var(--tm-primary)_7%,var(--tm-surface))] px-5 py-4">
         <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[11px] bg-[linear-gradient(135deg,var(--tm-primary),var(--tm-primary-deep))] text-white">
           {isEditing ? <IconEdit size={20} /> : <IconClipboard size={20} />}
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-tm-lg font-bold tracking-[-0.01em] text-tm-fg">
-            {isEditing ? 'Editar ficha' : 'Nova ficha epicrítica'}
+            {isEditing ? 'Editar atendimento' : 'Novo atendimento'}
           </div>
           <div className="text-tm-sm text-tm-fg-muted">
             {isEditing ? 'Atualize os dados do procedimento.' : 'Registre um novo procedimento.'}
@@ -201,30 +223,47 @@ export function FichaForm({ ficha, pacienteIdInicial, onCancel, onSuccess }: Fic
         )}
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="Data" type="date" value={data} onChange={(e) => setData(e.target.value)} error={error.data} disabled={loading} />
-          <Input label="Horário" type="time" value={hora} onChange={(e) => setHora(e.target.value)} disabled={loading} />
+          <Input label="Data" type="date" value={data} onChange={(e) => setData(e.target.value)} error={error.data} disabled={loading || (!!ficha && ficha.status !== 'agendada')} />
+          <Input label="Horário" type="time" value={hora} onChange={(e) => setHora(e.target.value)} disabled={loading || (!!ficha && ficha.status !== 'agendada')} />
         </div>
 
         <Select
           label="Procedimento"
           value={procedimento}
           onChange={setProcedimento}
-          options={PROCEDIMENTOS.map((p) => ({ value: p, label: p }))}
+          options={procedimentos.map((p) => ({ value: p.nome, label: p.nome }))}
           placeholder="Selecione o tipo"
           error={error.procedimento}
           disabled={loading}
         />
 
-        <Select
+        {procedimento === 'Outro' && (
+          <Input label="Especifique o procedimento" value={procedimentoOutro} onChange={(e) => setProcedimentoOutro(e.target.value)} disabled={loading} required />
+        )}
+
+        {ficha && ficha.status !== 'concluida' && <Select
           label="Status"
           value={status}
           onChange={(v) => setStatus(v as FichaStatus)}
-          options={STATUS_OPTIONS.filter((option) => !ficha || ficha.status === 'agendada' || option.value !== 'agendada')}
+          options={STATUS_OPTIONS.filter((option) => option.value !== 'cancelada' && (ficha ? option.value === ficha.status || (ficha.status === 'agendada' && option.value === 'pendente') || (ficha.status === 'pendente' && option.value === 'concluida') : option.value === 'agendada'))}
           disabled={loading}
-        />
+        />}
+        {ficha?.status === 'concluida' && <p className="rounded-tm-input bg-tm-surface-2 px-3 py-2 text-tm-sm text-tm-fg-muted">Atendimento concluído. Correções ficam registradas no histórico.</p>}
 
         {(status === 'pendente' || status === 'concluida') && (
           <FichaClinicalFields value={clinical} onChange={setClinical} disabled={loading} />
+        )}
+
+        {ficha && (status === 'pendente' || status === 'concluida') && (
+          <div className="flex flex-col gap-3 border-t border-tm-border pt-4">
+            <Select label="Situação clínica da ficha" value={situacao} onChange={(value) => setSituacao(value as Ficha['situacao'])}
+              options={[{ value: 'EM_TRATAMENTO', label: 'Em tratamento' }, { value: 'FORA_DE_TRATAMENTO', label: 'Fora de tratamento' }]} disabled={loading} />
+            {situacao === 'FORA_DE_TRATAMENTO' && <div className="grid gap-3 sm:grid-cols-2">
+              <Select label="Motivo" value={motivoEncerramento ?? ''} onChange={(value) => setMotivoEncerramento(value as Ficha['motivoEncerramento'])}
+                options={[{ value: 'ALTA', label: 'Alta' }, { value: 'ABANDONO', label: 'Abandono' }, { value: 'OBITO', label: 'Óbito' }]} disabled={loading} />
+              <Input label="Data" type="date" value={dataEncerramento} onChange={(event) => setDataEncerramento(event.target.value)} disabled={loading} />
+            </div>}
+          </div>
         )}
 
         <label className="flex flex-col gap-1.5">
@@ -238,6 +277,8 @@ export function FichaForm({ ficha, pacienteIdInicial, onCancel, onSuccess }: Fic
             className="min-h-[100px] resize-y rounded-tm-input border-[1.5px] border-tm-border bg-tm-surface px-3.5 py-3 font-[inherit] text-tm-md text-tm-fg outline-none transition-all focus:border-tm-primary focus:shadow-[0_0_0_4px_var(--tm-focus-ring)]"
           />
         </label>
+
+        {ficha && <AtendimentoMidias atendimentoId={ficha.id} podeEditar={ficha.status !== 'cancelada'} />}
 
         <div className="mt-2 flex justify-end gap-2.5 border-t border-tm-border pt-4">
           <Button type="button" variant="secondary" onClick={onCancel} disabled={loading}>

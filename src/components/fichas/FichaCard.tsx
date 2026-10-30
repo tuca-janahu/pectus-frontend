@@ -70,7 +70,7 @@ export function FichaCard({
         {onDelete && (
           <IconButton
             icon={<IconTrash size={17} className="cursor-pointer transition-colors" />}
-            label="Cancelar ficha"
+            label="Cancelar atendimento"
             className="cursor-pointer transition-colors hover:text-tm-danger-fg hover:bg-tm-danger-bg"
             onClick={(e) => {
               e.stopPropagation()

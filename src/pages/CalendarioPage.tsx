@@ -237,7 +237,7 @@ export function CalendarioPage() {
     try {
       const [fichasRes, pacientesRes] = await Promise.all([
         listFichas(accessToken),
-        listPacientes(accessToken),
+        listPacientes(accessToken, undefined, true),
       ])
       setFichas(fichasRes)
       setPacientes(pacientesRes.pacientes)
@@ -290,11 +290,11 @@ export function CalendarioPage() {
   }
 
   const handleDelete = async (ficha: Ficha) => {
-    if (!confirm('Deseja realmente cancelar este agendamento?')) return
+    if (!window.confirm('Cancelar este atendimento? Esta ação não poderá ser revertida.')) return
     try {
       if (!accessToken) return
       await deleteFicha(accessToken, ficha.id)
-      toastSuccess('Ficha cancelada com sucesso.')
+      toastSuccess('Atendimento cancelado com sucesso.')
       await carregarDados()
     } catch {
       toastError('Não foi possível cancelar o agendamento.')
@@ -597,9 +597,9 @@ export function CalendarioPage() {
                 iniciais={paciente ? obterIniciais(paciente.nome) : '?'}
                 avatarColor={AVATAR_COLORS[ficha.pacienteId % AVATAR_COLORS.length]}
                 fotoUrl={paciente?.fotoUrl}
-                onClick={() => handleEdit(ficha)}
-                onEdit={() => handleEdit(ficha)}
-                onDelete={() => handleDelete(ficha)}
+                onClick={(ficha.status === 'concluida' && user?.roles.includes('MEDICO')) || ((ficha.status === 'agendada' || ficha.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === ficha.medicoId)) ? () => handleEdit(ficha) : undefined}
+                onEdit={(ficha.status === 'concluida' && user?.roles.includes('MEDICO')) || ((ficha.status === 'agendada' || ficha.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === ficha.medicoId)) ? () => handleEdit(ficha) : undefined}
+                onDelete={(ficha.status === 'agendada' || ficha.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === ficha.medicoId) ? () => handleDelete(ficha) : undefined}
               />
             )
           })

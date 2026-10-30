@@ -17,8 +17,8 @@ const OPTIONS: ChooserOption[] = [
     id: 'form',
     icon: <IconClipboard size={26} />,
     tag: 'Preparada com antecedência',
-    title: 'Ficha prévia',
-    body: 'Preencha os dados do procedimento antes do atendimento — paciente, data, horário, conduta e observações.',
+    title: 'Agendar atendimento',
+    body: 'Defina paciente, data, horário e procedimento. Os dados clínicos permanecem na ficha única do paciente.',
     bullets: ['Agendamento e organização', 'Paciente e procedimento', 'Editável até o atendimento'],
     accentClass: 'text-tm-primary',
     cta: 'Preencher formulário',
@@ -28,7 +28,7 @@ const OPTIONS: ChooserOption[] = [
     icon: <IconMessage size={26} />,
     tag: 'Durante a consulta',
     title: 'Atendimento ao vivo',
-    body: 'Inicie a consulta com os dados clínicos da última ficha e atualize somente o que mudou no atendimento atual.',
+    body: 'Inicie a consulta com os dados clínicos atuais da ficha e registre o que mudou neste atendimento.',
     bullets: ['Dados anteriores pré-preenchidos', 'Campos clínicos completos', 'Rascunho ou conclusão'],
     accentClass: 'text-tm-accent-green-fg',
     cta: 'Iniciar atendimento',
@@ -42,7 +42,7 @@ interface NovaFichaChooserProps {
 export function NovaFichaChooser({ onChoose }: NovaFichaChooserProps) {
   return (
     <div>
-      <h2 className="text-tm-3xl font-bold tracking-[-0.01em] text-tm-fg">Nova ficha</h2>
+      <h2 className="text-tm-3xl font-bold tracking-[-0.01em] text-tm-fg">Novo atendimento</h2>
       <p className="mt-1 text-tm-md text-tm-fg-muted">Como você quer registrar?</p>
 
       <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
