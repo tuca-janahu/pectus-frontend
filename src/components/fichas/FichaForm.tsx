@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { Button, Card, Dropdown, IconButton, Input, Select } from '../ui'
+import { Button, Card, Dropdown, IconButton, Input, Select, StatusBadge } from '../ui'
 import type { DropdownOption } from '../ui'
-import { IconArrowLeft, IconCheck, IconClipboard, IconClose, IconEdit, IconUser, IconUserPlus } from '../icons'
+import { IconArrowLeft, IconCheck, IconClipboard, IconClose, IconEdit, IconStethoscope, IconUser, IconUserPlus } from '../icons'
 import { PatientFormFields } from '../pacientes/PatientFormFields'
 import { usePatientForm } from '../pacientes/usePatientForm'
-import { STATUS_OPTIONS } from '../../data/procedimentos'
 import {
   EMPTY_CLINICAL_VALUES,
   clinicalValuesFromFicha,
   alterarSituacaoFicha,
   createFicha,
+  iniciarAtendimento,
   listProcedimentos,
   updateFicha,
   type Ficha,
@@ -39,11 +39,12 @@ function calcularIdade(dataNascimento: string): number {
 interface FichaFormProps {
   ficha?: Ficha
   pacienteIdInicial?: number
+  dataInicial?: string
   onCancel: () => void
   onSuccess: (ficha: Ficha) => void
 }
 
-export function FichaForm({ ficha, pacienteIdInicial, onCancel, onSuccess }: FichaFormProps) {
+export function FichaForm({ ficha, pacienteIdInicial, dataInicial, onCancel, onSuccess }: FichaFormProps) {
   const isEditing = !!ficha
   const { accessToken, user } = useAuth()
 
@@ -56,7 +57,7 @@ export function FichaForm({ ficha, pacienteIdInicial, onCancel, onSuccess }: Fic
   const [loadingPacientes, setLoadingPacientes] = useState(true)
   const novoPacienteForm = usePatientForm()
 
-  const [data, setData] = useState(ficha?.data || hojeISO())
+  const [data, setData] = useState(ficha?.data || dataInicial || hojeISO())
   const [hora, setHora] = useState(ficha?.hora || '09:00')
   const [procedimento, setProcedimento] = useState(ficha?.procedimento || '')
   const [procedimentoOutro, setProcedimentoOutro] = useState(ficha?.procedimentoOutro || '')
@@ -75,7 +76,7 @@ export function FichaForm({ ficha, pacienteIdInicial, onCancel, onSuccess }: Fic
     if (!accessToken) return
     setLoadingPacientes(true)
     try {
-      const { pacientes: lista } = await listPacientes(accessToken)
+      const { pacientes: lista } = await listPacientes(accessToken, undefined, true)
       setPacientes(lista)
     } catch (err) {
       toastError(err instanceof ApiError ? err.message : 'Não foi possível carregar os pacientes.')
@@ -98,8 +99,25 @@ export function FichaForm({ ficha, pacienteIdInicial, onCancel, onSuccess }: Fic
     label: `${p.nome} — ${calcularIdade(p.dataNascimento)} anos`,
   }))
 
-  const submit = async (e: FormEvent) => {
-    e.preventDefault()
+  const iniciar = async () => {
+    if (!ficha || !accessToken || loading) return
+    setLoading(true)
+    try {
+      const iniciado = await iniciarAtendimento(accessToken, ficha.id)
+      setStatus('pendente')
+      setClinical(clinicalValuesFromFicha(iniciado))
+      setSituacao(iniciado.situacao)
+      setMotivoEncerramento(iniciado.motivoEncerramento)
+      setDataEncerramento(iniciado.dataEncerramento?.slice(0, 10) ?? '')
+      toastSuccess('Atendimento iniciado. A ficha clínica está pronta para preenchimento.')
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Não foi possível iniciar o atendimento.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const salvar = async (concluir = false) => {
     const err: typeof error = {}
     if (modoPaciente === 'existente' && !pacienteId) {
       err.pacienteId = 'Selecione um paciente'
@@ -110,6 +128,10 @@ export function FichaForm({ ficha, pacienteIdInicial, onCancel, onSuccess }: Fic
     if (!data) err.data = 'Informe a data'
     if (!procedimento) err.procedimento = 'Selecione o procedimento'
     if (procedimento === 'Outro' && !procedimentoOutro.trim()) err.procedimento = 'Especifique o procedimento'
+    if (concluir && !clinical.dataInjuriaTraqueal) {
+      toastError('Informe a data da injúria traqueal antes de concluir.')
+      return
+    }
     if (situacao === 'FORA_DE_TRATAMENTO' && (!motivoEncerramento || !dataEncerramento)) {
       toastError('Informe motivo e data para a situação fora de tratamento.')
       return
@@ -132,19 +154,21 @@ export function FichaForm({ ficha, pacienteIdInicial, onCancel, onSuccess }: Fic
         hora,
         procedimento,
         procedimentoOutro,
-        status,
+        status: concluir ? 'concluida' : status,
         descricao,
         modo: ficha?.modo ?? 'previa',
         ...(status === 'pendente' || status === 'concluida' ? clinical : {}),
       }
-      if (!accessToken || !user?.medico?.id) throw new Error('Seu usuário não possui um perfil médico ativo.')
+      if (!accessToken) throw new Error('Sessão expirada. Entre novamente.')
+      const medicoId = ficha?.medicoId ?? user?.medico?.id
+      if (!medicoId) throw new Error('Seu usuário não possui um perfil médico ativo.')
       const salva = isEditing
-        ? await updateFicha(accessToken, user.medico.id, ficha.id, input)
-        : await createFicha(accessToken, user.medico.id, input)
+        ? await updateFicha(accessToken, medicoId, ficha.id, input)
+        : await createFicha(accessToken, medicoId, input)
       if (isEditing && (situacao !== ficha.situacao || motivoEncerramento !== ficha.motivoEncerramento || dataEncerramento !== (ficha.dataEncerramento?.slice(0, 10) ?? ''))) {
         await alterarSituacaoFicha(accessToken, salva.id, situacao, situacao === 'EM_TRATAMENTO' ? null : motivoEncerramento, situacao === 'EM_TRATAMENTO' ? null : dataEncerramento)
       }
-      toastSuccess(isEditing ? 'Atendimento atualizado com sucesso.' : 'Atendimento agendado com sucesso.')
+      toastSuccess(concluir ? 'Atendimento concluído com sucesso.' : isEditing ? 'Atendimento atualizado com sucesso.' : 'Atendimento agendado com sucesso.')
       onSuccess(salva)
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Não foi possível salvar. Tente novamente.')
@@ -153,7 +177,7 @@ export function FichaForm({ ficha, pacienteIdInicial, onCancel, onSuccess }: Fic
     }
   }
 
-  const submitLabel = isEditing ? 'Salvar alterações' : modoPaciente === 'novo' ? 'Criar paciente e agendar' : 'Agendar atendimento'
+  const submitLabel = status === 'pendente' ? 'Salvar rascunho' : status === 'concluida' ? 'Salvar correção' : isEditing ? 'Salvar agendamento' : modoPaciente === 'novo' ? 'Criar paciente e agendar' : 'Agendar atendimento'
 
   return (
     <div className="flex flex-col gap-4">
@@ -181,7 +205,20 @@ export function FichaForm({ ficha, pacienteIdInicial, onCancel, onSuccess }: Fic
         <IconButton icon={<IconClose size={20} />} label="Cancelar" onClick={onCancel} />
         </div>
 
-        <form onSubmit={submit} className="flex flex-col gap-4 p-5">
+        <form onSubmit={(event: FormEvent) => { event.preventDefault(); void salvar() }} className="flex flex-col gap-4 p-5">
+        {ficha && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-tm-input border border-tm-border bg-tm-surface-2 px-4 py-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-tm-sm font-semibold text-tm-fg-muted">Situação do atendimento</span>
+              <StatusBadge status={status} />
+            </div>
+            {status === 'agendada' && user?.roles.includes('MEDICO') && user.medico?.id === ficha.medicoId && (
+              <Button type="button" size="sm" icon={<IconStethoscope size={16} />} onClick={iniciar} disabled={loading}>
+                {loading ? 'Iniciando...' : 'Iniciar atendimento'}
+              </Button>
+            )}
+          </div>
+        )}
         {modoPaciente === 'existente' ? (
           <div className="flex flex-col gap-2">
             <Dropdown
@@ -191,18 +228,18 @@ export function FichaForm({ ficha, pacienteIdInicial, onCancel, onSuccess }: Fic
               value={pacienteId}
               onChange={(v) => setPacienteId(Number(v))}
               placeholder={loadingPacientes ? 'Carregando pacientes...' : 'Selecione um paciente'}
-              disabled={loading || loadingPacientes}
+              disabled={loading || loadingPacientes || isEditing}
               error={error.pacienteId}
               required
             />
-            <button
+            {!isEditing && <button
               type="button"
               onClick={() => setModoPaciente('novo')}
               disabled={loading}
               className="inline-flex items-center gap-1.5 self-start text-tm-sm font-semibold text-tm-primary disabled:cursor-not-allowed disabled:opacity-50"
             >
               <IconUserPlus size={14} /> Paciente não encontrado? Cadastrar novo
-            </button>
+            </button>}
           </div>
         ) : (
           <div className="flex flex-col gap-4 rounded-tm-input border border-tm-border bg-tm-surface-2 p-4">
@@ -223,8 +260,8 @@ export function FichaForm({ ficha, pacienteIdInicial, onCancel, onSuccess }: Fic
         )}
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="Data" type="date" value={data} onChange={(e) => setData(e.target.value)} error={error.data} disabled={loading || (!!ficha && ficha.status !== 'agendada')} />
-          <Input label="Horário" type="time" value={hora} onChange={(e) => setHora(e.target.value)} disabled={loading || (!!ficha && ficha.status !== 'agendada')} />
+          <Input label="Data" type="date" value={data} onChange={(e) => setData(e.target.value)} error={error.data} disabled={loading || (!!ficha && status !== 'agendada')} />
+          <Input label="Horário" type="time" value={hora} onChange={(e) => setHora(e.target.value)} disabled={loading || (!!ficha && status !== 'agendada')} />
         </div>
 
         <Select
@@ -241,14 +278,8 @@ export function FichaForm({ ficha, pacienteIdInicial, onCancel, onSuccess }: Fic
           <Input label="Especifique o procedimento" value={procedimentoOutro} onChange={(e) => setProcedimentoOutro(e.target.value)} disabled={loading} required />
         )}
 
-        {ficha && ficha.status !== 'concluida' && <Select
-          label="Status"
-          value={status}
-          onChange={(v) => setStatus(v as FichaStatus)}
-          options={STATUS_OPTIONS.filter((option) => option.value !== 'cancelada' && (ficha ? option.value === ficha.status || (ficha.status === 'agendada' && option.value === 'pendente') || (ficha.status === 'pendente' && option.value === 'concluida') : option.value === 'agendada'))}
-          disabled={loading}
-        />}
-        {ficha?.status === 'concluida' && <p className="rounded-tm-input bg-tm-surface-2 px-3 py-2 text-tm-sm text-tm-fg-muted">Atendimento concluído. Correções ficam registradas no histórico.</p>}
+        {status === 'agendada' && ficha && <p className="rounded-tm-input bg-tm-surface-2 px-3 py-2 text-tm-sm text-tm-fg-muted">Para preencher os dados clínicos, inicie o atendimento pelo botão no início desta página.</p>}
+        {status === 'concluida' && <p className="rounded-tm-input bg-tm-surface-2 px-3 py-2 text-tm-sm text-tm-fg-muted">Atendimento concluído. Correções ficam registradas no histórico.</p>}
 
         {(status === 'pendente' || status === 'concluida') && (
           <FichaClinicalFields value={clinical} onChange={setClinical} disabled={loading} />
@@ -278,15 +309,20 @@ export function FichaForm({ ficha, pacienteIdInicial, onCancel, onSuccess }: Fic
           />
         </label>
 
-        {ficha && <AtendimentoMidias atendimentoId={ficha.id} podeEditar={ficha.status !== 'cancelada'} />}
+        {ficha && <AtendimentoMidias atendimentoId={ficha.id} podeEditar={status !== 'cancelada' && (status === 'concluida' ? !!user?.roles.includes('MEDICO') : !!user?.roles.includes('ADMIN') || user?.medico?.id === ficha.medicoId)} />}
 
         <div className="mt-2 flex justify-end gap-2.5 border-t border-tm-border pt-4">
           <Button type="button" variant="secondary" onClick={onCancel} disabled={loading}>
             Cancelar
           </Button>
-          <Button type="submit" icon={<IconCheck size={16} />} disabled={loading}>
+          <Button type="submit" icon={<IconCheck size={16} />} disabled={loading || status === 'cancelada'}>
             {loading ? 'Salvando...' : submitLabel}
           </Button>
+          {status === 'pendente' && (
+            <Button type="button" icon={<IconStethoscope size={16} />} disabled={loading} onClick={() => void salvar(true)}>
+              {loading ? 'Concluindo...' : 'Concluir atendimento'}
+            </Button>
+          )}
         </div>
         </form>
       </Card>

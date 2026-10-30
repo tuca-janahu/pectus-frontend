@@ -4,12 +4,13 @@ import { Card, EmptyState } from '../components/ui'
 import type { AvatarColor } from '../components/ui'
 import { IconCalendar, IconList, IconPlus } from '../components/icons'
 import { FichaCard } from '../components/fichas/FichaCard'
+import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { NovaFichaChooser } from '../components/fichas/NovaFichaChooser'
 import { FichaForm } from '../components/fichas/FichaForm'
 import { FichaAoVivo } from '../components/fichas/FichaAoVivo'
 import { useAuth } from '../auth/AuthContext'
 import { listPacientes, ApiError, type PacienteResumo } from '../lib/api'
-import { listFichas, deleteFicha, type Ficha } from '../lib/fichasStore'
+import { listFichas, deleteFicha, iniciarAtendimento, type Ficha } from '../lib/fichasStore'
 import { toastError, toastSuccess } from '../lib/toast'
 
 const AVATAR_COLORS: AvatarColor[] = ['sky', 'teal', 'violet', 'rose', 'amber']
@@ -47,12 +48,14 @@ function diaRelativo(iso: string): string | null {
   return null
 }
 
-type Filtro = 'todas' | 'agendada' | 'concluida'
+type Filtro = 'todas' | 'agendada' | 'pendente' | 'concluida' | 'cancelada'
 
 const FILTROS: { id: Filtro; label: string }[] = [
   { id: 'todas', label: 'Todas' },
   { id: 'agendada', label: 'Agendadas' },
-          { id: 'concluida', label: 'Concluídos' },
+  { id: 'pendente', label: 'Em preenchimento' },
+  { id: 'concluida', label: 'Concluídos' },
+  { id: 'cancelada', label: 'Cancelados' },
 ]
 
 export interface FichasPageProps {
@@ -69,6 +72,8 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
   const [fichas, setFichas] = useState<Ficha[]>([])
   const [pacientes, setPacientes] = useState<PacienteResumo[]>([])
   const [loading, setLoading] = useState(true)
+  const [startingId, setStartingId] = useState<number | null>(null)
+  const [cancelTarget, setCancelTarget] = useState<Ficha | null>(null)
 
   const pathname = location.pathname.replace(/\/+$/, '') || '/'
   const editMatch = matchPath('/fichas/:id/editar', pathname) ?? matchPath('/fichas/editar/:id', pathname)
@@ -77,6 +82,8 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
   const searchParams = new URLSearchParams(location.search)
   const pacienteIdParam = Number(searchParams.get('pacienteId'))
   const pacienteIdInicial = Number.isInteger(pacienteIdParam) && pacienteIdParam > 0 ? pacienteIdParam : undefined
+  const dataParam = searchParams.get('data')
+  const dataInicial = dataParam && /^\d{4}-\d{2}-\d{2}$/.test(dataParam) ? dataParam : undefined
   const retornoParam = searchParams.get('retorno')
   const retorno = retornoParam?.startsWith('/pacientes/') || retornoParam === '/calendario' ? retornoParam : '/fichas'
 
@@ -122,15 +129,30 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
     navigate(`/fichas/${ficha.id}/editar`)
   }
 
-  const handleDelete = async (ficha: Ficha) => {
+  const handleStart = async (ficha: Ficha) => {
+    if (!accessToken || startingId !== null) return
+    setStartingId(ficha.id)
     try {
-      if (!accessToken) return
-      if (!window.confirm('Cancelar este atendimento? Esta ação não poderá ser revertida.')) return
-      await deleteFicha(accessToken, ficha.id)
-      toastSuccess('Ficha cancelada.')
+      await iniciarAtendimento(accessToken, ficha.id)
+      toastSuccess('Atendimento iniciado. Preencha a ficha clínica.')
+      openEdit(ficha)
+    } catch (error) {
+      toastError(error instanceof Error ? error.message : 'Não foi possível iniciar o atendimento.')
       await carregarFichas()
-    } catch {
-      toastError('Não foi possível excluir a ficha.')
+    } finally {
+      setStartingId(null)
+    }
+  }
+
+  const handleDelete = async () => {
+    try {
+      if (!accessToken || !cancelTarget) return
+      await deleteFicha(accessToken, cancelTarget.id)
+      setCancelTarget(null)
+      toastSuccess('Atendimento cancelado.')
+      await carregarFichas()
+    } catch (error) {
+      toastError(error instanceof Error ? error.message : 'Não foi possível cancelar o atendimento.')
     }
   }
 
@@ -155,7 +177,7 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
   }
 
   if (pathname === '/fichas/nova/agendamento') {
-    return <FichaForm pacienteIdInicial={pacienteIdInicial} onCancel={backToList} onSuccess={handleSaved} />
+    return <FichaForm pacienteIdInicial={pacienteIdInicial} dataInicial={dataInicial} onCancel={backToList} onSuccess={handleSaved} />
   }
 
   if (pathname === '/fichas/nova/atendimento') {
@@ -164,7 +186,7 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
 
   if (editMatch) {
     if (loading) {
-      return <div className="py-4 text-tm-sm text-tm-fg-muted">Carregando ficha...</div>
+        return <div className="py-4 text-tm-sm text-tm-fg-muted">Carregando atendimento...</div>
     }
 
     if (!editingFicha) {
@@ -180,7 +202,7 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
 
   return (
     <div className="flex flex-col gap-5 text-tm-fg">
-      <div className="inline-flex gap-1.5 self-start rounded-tm-button border border-tm-border bg-tm-surface-2 p-1">
+      <div className="flex max-w-full flex-wrap gap-1.5 self-start rounded-tm-button border border-tm-border bg-tm-surface-2 p-1">
         {FILTROS.map((f) => (
           <button
             key={f.id}
@@ -215,10 +237,10 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
       </div>
 
       {loading ? (
-        <div className="py-4 text-tm-sm text-tm-fg-muted">Carregando fichas...</div>
+        <div className="py-4 text-tm-sm text-tm-fg-muted">Carregando atendimentos...</div>
       ) : grouped.length === 0 ? (
         <Card>
-          <EmptyState icon={<IconList size={28} />} title="Nenhuma ficha encontrada" body="Tente trocar o filtro ou crie uma nova ficha." />
+          <EmptyState icon={<IconList size={28} />} title="Nenhum atendimento encontrado" body="Tente trocar o filtro ou crie um novo atendimento." />
         </Card>
       ) : (
         <div className="flex flex-col gap-6">
@@ -255,7 +277,9 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
                         fotoUrl={p?.fotoUrl}
                         onClick={(f.status === 'concluida' && user?.roles.includes('MEDICO')) || ((f.status === 'agendada' || f.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === f.medicoId)) ? () => openEdit(f) : undefined}
                         onEdit={(f.status === 'concluida' && user?.roles.includes('MEDICO')) || ((f.status === 'agendada' || f.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === f.medicoId)) ? () => openEdit(f) : undefined}
-                        onDelete={(f.status === 'agendada' || f.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === f.medicoId) ? () => handleDelete(f) : undefined}
+                         onDelete={(f.status === 'agendada' || f.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === f.medicoId) ? () => setCancelTarget(f) : undefined}
+                         onStart={f.status === 'agendada' && user?.roles.includes('MEDICO') && user.medico?.id === f.medicoId ? () => handleStart(f) : undefined}
+                         starting={startingId === f.id}
                       />
                     )
                   })}
@@ -265,6 +289,9 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
           })}
         </div>
       )}
+      <ConfirmDialog open={!!cancelTarget} title="Cancelar atendimento?"
+        description="O cancelamento é definitivo. Para atender o paciente depois, será necessário criar outro agendamento."
+        confirmLabel="Cancelar atendimento" onCancel={() => setCancelTarget(null)} onConfirm={handleDelete} />
     </div>
   )
 }

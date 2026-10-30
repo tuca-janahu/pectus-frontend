@@ -80,7 +80,7 @@ function LinhaDaAgenda({ ficha, pacientes }: { ficha: Ficha; pacientes: Paciente
       type="button"
       onClick={() => navigate(`/fichas/${ficha.id}/editar`)}
       className="group flex w-full items-center gap-3 border-b border-tm-border px-4 py-3.5 text-left transition-colors last:border-b-0 hover:bg-tm-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-tm-primary sm:gap-4 sm:px-5"
-      aria-label={`Abrir ficha de ${nome}, às ${ficha.hora}`}
+      aria-label={`Abrir atendimento de ${nome}, às ${ficha.hora}`}
     >
       <div className="flex w-14 shrink-0 flex-col items-center border-r border-tm-border pr-3 sm:w-16 sm:pr-4">
         <span className="text-tm-2xl font-bold tracking-[-0.02em] text-tm-fg">{ficha.hora}</span>
@@ -99,7 +99,9 @@ function LinhaDaAgenda({ ficha, pacientes }: { ficha: Ficha; pacientes: Paciente
           <span className="truncate text-tm-lg font-semibold tracking-[-0.005em] text-tm-fg">{nome}</span>
           <StatusBadge status={ficha.status} />
         </div>
-        <p className="mt-0.5 truncate text-tm-base text-tm-fg-muted">{ficha.procedimento}</p>
+        <p className="mt-0.5 truncate text-tm-base text-tm-fg-muted" title={ficha.descricao || undefined}>
+          {ficha.procedimento}{ficha.procedimentoOutro ? ` — ${ficha.procedimentoOutro}` : ''}{ficha.descricao ? ` · ${ficha.descricao}` : ''}
+        </p>
       </div>
 
       <IconChevronRight
@@ -142,7 +144,7 @@ export function HomePage() {
     try {
       const [listaFichas, pacientesResponse] = await Promise.all([
         listFichas(accessToken),
-        listPacientes(accessToken),
+        listPacientes(accessToken, undefined, true),
       ])
       setFichas(listaFichas)
       setPacientes(pacientesResponse.pacientes)

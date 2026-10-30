@@ -331,6 +331,13 @@ export async function deleteFicha(accessToken: string, id: number): Promise<void
   await request(accessToken, `/atendimentos/${id}/cancelar`, { method: 'POST' })
 }
 
+export async function iniciarAtendimento(accessToken: string, id: number): Promise<Ficha> {
+  const { atendimento } = await request<{ atendimento: ApiFicha }>(accessToken, `/atendimentos/${id}/iniciar`, {
+    method: 'POST',
+  })
+  return paraFicha(atendimento)
+}
+
 export interface MidiaAtendimento {
   id: number
   atendimentoId: number

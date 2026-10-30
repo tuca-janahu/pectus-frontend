@@ -19,8 +19,9 @@ import { obterIniciais, calcularIdadeAnos } from '../../lib/pacienteFormat'
 import { toastError, toastSuccess } from '../../lib/toast'
 import { PatientForm } from '../../components/pacientes/PatientForm'
 import { FichaCard } from '../../components/fichas/FichaCard'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { AtendimentoMidias } from '../../components/fichas/AtendimentoMidias'
-import { deleteFicha, getFichaPaciente, listAtendimentosPaciente, type Ficha, type FichaLongitudinal } from '../../lib/fichasStore'
+import { deleteFicha, getFichaPaciente, iniciarAtendimento, listAtendimentosPaciente, type Ficha, type FichaLongitudinal } from '../../lib/fichasStore'
 
 const AVATAR_COLORS: AvatarColor[] = ['sky', 'teal', 'violet', 'rose', 'amber']
 const FOTO_MIME_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp']
@@ -82,6 +83,8 @@ export function PacienteDetailsPage() {
   const [fichaLongitudinal, setFichaLongitudinal] = useState<FichaLongitudinal | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadingFichas, setLoadingFichas] = useState(true)
+  const [startingId, setStartingId] = useState<number | null>(null)
+  const [cancelTarget, setCancelTarget] = useState<Ficha | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [uploadingFoto, setUploadingFoto] = useState(false)
   const [fotoPreview, setFotoPreview] = useState<string | null>(null)
@@ -166,15 +169,30 @@ export function PacienteDetailsPage() {
     navigate(`/fichas/${ficha.id}/editar?retorno=${encodeURIComponent(retorno)}`)
   }
 
-  const cancelarFicha = async (ficha: Ficha) => {
-    if (!accessToken) return
-    if (!window.confirm('Cancelar este atendimento? Esta ação não poderá ser revertida.')) return
+  const iniciarFicha = async (ficha: Ficha) => {
+    if (!accessToken || startingId !== null) return
+    setStartingId(ficha.id)
     try {
-      await deleteFicha(accessToken, ficha.id)
-      toastSuccess('Ficha cancelada.')
+      await iniciarAtendimento(accessToken, ficha.id)
+      toastSuccess('Atendimento iniciado. Preencha a ficha clínica.')
+      editarFicha(ficha)
+    } catch (error) {
+      toastError(error instanceof Error ? error.message : 'Não foi possível iniciar o atendimento.')
+      await carregarFichas()
+    } finally {
+      setStartingId(null)
+    }
+  }
+
+  const cancelarFicha = async () => {
+    if (!accessToken || !cancelTarget) return
+    try {
+      await deleteFicha(accessToken, cancelTarget.id)
+      setCancelTarget(null)
+      toastSuccess('Atendimento cancelado.')
       await carregarFichas()
     } catch (err) {
-      toastError(err instanceof Error ? err.message : 'Não foi possível cancelar a ficha.')
+      toastError(err instanceof Error ? err.message : 'Não foi possível cancelar o atendimento.')
     }
   }
 
@@ -384,9 +402,9 @@ export function PacienteDetailsPage() {
               </Button>
             </div>
             {loadingFichas ? (
-              <p className="text-tm-sm text-tm-fg-muted">Carregando fichas...</p>
+              <p className="text-tm-sm text-tm-fg-muted">Carregando atendimentos...</p>
             ) : fichas.length === 0 ? (
-              <p className="text-tm-sm text-tm-fg-muted">Nenhuma ficha registrada até o momento.</p>
+              <p className="text-tm-sm text-tm-fg-muted">Nenhum atendimento registrado até o momento.</p>
             ) : (
               <div className="flex flex-col gap-3">
                 {fichas.map((ficha) => (
@@ -402,7 +420,9 @@ export function PacienteDetailsPage() {
                       fotoUrl={imagemSrc}
                       onClick={(ficha.status === 'concluida' && user?.roles.includes('MEDICO')) || ((ficha.status === 'agendada' || ficha.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === ficha.medicoId)) ? () => editarFicha(ficha) : undefined}
                       onEdit={(ficha.status === 'concluida' && user?.roles.includes('MEDICO')) || ((ficha.status === 'agendada' || ficha.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === ficha.medicoId)) ? () => editarFicha(ficha) : undefined}
-                      onDelete={(ficha.status === 'agendada' || ficha.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === ficha.medicoId) ? () => cancelarFicha(ficha) : undefined}
+                      onDelete={(ficha.status === 'agendada' || ficha.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === ficha.medicoId) ? () => setCancelTarget(ficha) : undefined}
+                      onStart={ficha.status === 'agendada' && user?.roles.includes('MEDICO') && user.medico?.id === ficha.medicoId ? () => iniciarFicha(ficha) : undefined}
+                      starting={startingId === ficha.id}
                     />
                     <details className="rounded-tm-card border border-tm-border px-3 py-2 text-tm-sm text-tm-fg-muted">
                       <summary className="cursor-pointer">Detalhes, alterações e mídias</summary>
@@ -423,6 +443,9 @@ export function PacienteDetailsPage() {
           </Card>
         </div>
       </div>
+      <ConfirmDialog open={!!cancelTarget} title="Cancelar atendimento?"
+        description="O cancelamento é definitivo. Para atender o paciente depois, será necessário criar outro agendamento."
+        confirmLabel="Cancelar atendimento" onCancel={() => setCancelTarget(null)} onConfirm={cancelarFicha} />
     </div>
   )
 }

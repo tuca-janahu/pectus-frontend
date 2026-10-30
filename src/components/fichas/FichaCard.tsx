@@ -1,6 +1,6 @@
-import { Avatar, IconButton, StatusBadge } from '../ui'
+import { Avatar, Button, IconButton, StatusBadge } from '../ui'
 import type { AvatarColor } from '../ui'
-import { IconEdit, IconMessage, IconTrash } from '../icons'
+import { IconEdit, IconMessage, IconStethoscope, IconTrash } from '../icons'
 import type { Ficha } from '../../lib/fichasStore'
 
 interface FichaCardProps {
@@ -12,6 +12,8 @@ interface FichaCardProps {
   onClick?: () => void
   onEdit?: () => void
   onDelete?: () => void
+  onStart?: () => void
+  starting?: boolean
 }
 
 export function FichaCard({
@@ -23,13 +25,15 @@ export function FichaCard({
   onClick,
   onEdit,
   onDelete,
+  onStart,
+  starting = false,
 }: FichaCardProps) {
   return (
     <div
       onClick={onClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
-      className="flex items-stretch gap-3.5 rounded-tm-card border border-tm-border bg-tm-surface p-3.5 shadow-tm-card transition-all hover:border-[color-mix(in_oklch,var(--tm-primary)_35%,var(--tm-border))] hover:shadow-tm-card-hover"
+      className="flex flex-wrap items-stretch gap-3.5 rounded-tm-card border border-tm-border bg-tm-surface p-3.5 shadow-tm-card transition-all hover:border-[color-mix(in_oklch,var(--tm-primary)_35%,var(--tm-border))] hover:shadow-tm-card-hover"
       style={{ cursor: onClick ? 'pointer' : 'default' }}
     >
       <div className="flex min-w-14 flex-col items-center justify-center gap-0.5 border-r border-tm-border px-2">
@@ -37,15 +41,16 @@ export function FichaCard({
         <div className="text-tm-2xs font-semibold uppercase tracking-wider text-tm-fg-subtle">hrs</div>
       </div>
 
-      <div className="flex min-w-0 flex-1 items-center gap-3">
+      <div className="flex min-w-[180px] flex-1 items-center gap-3">
         <Avatar initials={iniciais ?? '?'} color={avatarColor} size={40} src={fotoUrl || undefined} />
         <div className="min-w-0 flex-1">
           <div className="mb-0.5 flex flex-wrap items-center gap-2">
             <div className="text-tm-lg font-semibold tracking-[-0.005em] text-tm-fg">{pacienteNome}</div>
             <StatusBadge status={ficha.status} />
           </div>
-          <div className="flex items-center gap-2 overflow-hidden text-tm-base text-tm-fg-muted">
-            <span className="truncate">{ficha.procedimento}</span>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-tm-base text-tm-fg-muted">
+            <span className="font-medium">{ficha.procedimento}{ficha.procedimentoOutro ? ` — ${ficha.procedimentoOutro}` : ''}</span>
+            {ficha.descricao && <span className="min-w-0 truncate" title={ficha.descricao}>· {ficha.descricao}</span>}
             {ficha.modo === 'ao-vivo' && (
               <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-tm-accent-green-bg px-2 py-0.5 text-tm-xs font-bold text-tm-accent-green-fg">
                 <IconMessage size={11} /> Ao vivo
@@ -55,7 +60,20 @@ export function FichaCard({
         </div>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex w-full flex-wrap items-center justify-end gap-1 border-t border-tm-border pt-2 sm:w-auto sm:border-0 sm:pt-0">
+        {onStart && (
+          <Button
+            size="sm"
+            icon={<IconStethoscope size={16} />}
+            disabled={starting}
+            onClick={(e) => {
+              e.stopPropagation()
+              onStart()
+            }}
+          >
+            {starting ? 'Iniciando...' : 'Iniciar atendimento'}
+          </Button>
+        )}
         {onEdit && (
           <IconButton
             icon={<IconEdit size={17} className="cursor-pointer transition-colors" />}

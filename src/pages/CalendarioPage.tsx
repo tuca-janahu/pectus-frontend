@@ -12,6 +12,7 @@ import {
 } from '../components/icons'
 import { Button, Card, EmptyState, type AvatarColor } from '../components/ui'
 import { FichaCard } from '../components/fichas/FichaCard'
+import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import {
   ApiError,
   connectGoogleCalendar,
@@ -20,7 +21,7 @@ import {
   type AuthUser,
   type PacienteResumo,
 } from '../lib/api'
-import { deleteFicha, listFichas, type Ficha } from '../lib/fichasStore'
+import { deleteFicha, iniciarAtendimento, listFichas, type Ficha } from '../lib/fichasStore'
 import { toastError, toastSuccess } from '../lib/toast'
 
 const AVATAR_COLORS: AvatarColor[] = ['sky', 'teal', 'violet', 'rose', 'amber']
@@ -151,6 +152,8 @@ export function CalendarioPage() {
   const [fichas, setFichas] = useState<Ficha[]>([])
   const [pacientes, setPacientes] = useState<PacienteResumo[]>([])
   const [loadingAgenda, setLoadingAgenda] = useState(true)
+  const [startingId, setStartingId] = useState<number | null>(null)
+  const [cancelTarget, setCancelTarget] = useState<Ficha | null>(null)
 
   // Mês, ano e seleção
   const hoje = hojeISO()
@@ -289,15 +292,31 @@ export function CalendarioPage() {
     navigate(`/fichas/${ficha.id}/editar?retorno=/calendario`)
   }
 
-  const handleDelete = async (ficha: Ficha) => {
-    if (!window.confirm('Cancelar este atendimento? Esta ação não poderá ser revertida.')) return
+  const handleStart = async (ficha: Ficha) => {
+    if (!accessToken || startingId !== null) return
+    setStartingId(ficha.id)
+    try {
+      await iniciarAtendimento(accessToken, ficha.id)
+      toastSuccess('Atendimento iniciado. Preencha a ficha clínica.')
+      handleEdit(ficha)
+    } catch (error) {
+      toastError(error instanceof Error ? error.message : 'Não foi possível iniciar o atendimento.')
+      await carregarDados()
+    } finally {
+      setStartingId(null)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!cancelTarget) return
     try {
       if (!accessToken) return
-      await deleteFicha(accessToken, ficha.id)
+      await deleteFicha(accessToken, cancelTarget.id)
+      setCancelTarget(null)
       toastSuccess('Atendimento cancelado com sucesso.')
       await carregarDados()
-    } catch {
-      toastError('Não foi possível cancelar o agendamento.')
+    } catch (error) {
+      toastError(error instanceof Error ? error.message : 'Não foi possível cancelar o atendimento.')
     }
   }
 
@@ -319,8 +338,8 @@ export function CalendarioPage() {
   const totalFichasDia = fichasDoDiaSelecionado.length
   const textoTotalFichas =
     totalFichasDia === 0
-      ? 'Nenhuma ficha agendada'
-      : `${totalFichasDia} ${totalFichasDia === 1 ? 'ficha agendada' : 'fichas agendadas'}`
+      ? 'Nenhum atendimento neste dia'
+      : `${totalFichasDia} ${totalFichasDia === 1 ? 'atendimento' : 'atendimentos'} neste dia`
 
   return (
     <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-6 text-tm-fg">
@@ -343,7 +362,7 @@ export function CalendarioPage() {
                   Integrar com o Google Agenda
                 </h2>
                 <p className="mt-0.5 text-tm-sm text-tm-fg-muted">
-                  Veja e sincronize as fichas direto na sua agenda do Google.
+                  Veja e sincronize os atendimentos direto na sua agenda do Google.
                 </p>
               </div>
             </div>
@@ -506,7 +525,7 @@ export function CalendarioPage() {
                   {quantidadeConsultas > 0 && (
                     <span
                       className="absolute top-2 right-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-tm-badge-count-bg px-1.5 text-tm-xs font-bold text-white shadow-tm-card"
-                      title={`${quantidadeConsultas} consulta(s) agendada(s)`}
+                      title={`${quantidadeConsultas} atendimento(s) no dia`}
                     >
                       {quantidadeConsultas}
                     </span>
@@ -573,8 +592,8 @@ export function CalendarioPage() {
           <Card padded>
             <EmptyState
               icon={<IconCalendar size={28} />}
-              title="Nenhum paciente agendado"
-              body="Não há fichas ou consultas programadas para este dia."
+              title="Nenhum atendimento neste dia"
+              body="Não há atendimentos registrados para este dia."
               action={
                 <Button
                   size="sm"
@@ -599,12 +618,17 @@ export function CalendarioPage() {
                 fotoUrl={paciente?.fotoUrl}
                 onClick={(ficha.status === 'concluida' && user?.roles.includes('MEDICO')) || ((ficha.status === 'agendada' || ficha.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === ficha.medicoId)) ? () => handleEdit(ficha) : undefined}
                 onEdit={(ficha.status === 'concluida' && user?.roles.includes('MEDICO')) || ((ficha.status === 'agendada' || ficha.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === ficha.medicoId)) ? () => handleEdit(ficha) : undefined}
-                onDelete={(ficha.status === 'agendada' || ficha.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === ficha.medicoId) ? () => handleDelete(ficha) : undefined}
+                onDelete={(ficha.status === 'agendada' || ficha.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === ficha.medicoId) ? () => setCancelTarget(ficha) : undefined}
+                onStart={ficha.status === 'agendada' && user?.roles.includes('MEDICO') && user.medico?.id === ficha.medicoId ? () => handleStart(ficha) : undefined}
+                starting={startingId === ficha.id}
               />
             )
           })
         )}
       </div>
+      <ConfirmDialog open={!!cancelTarget} title="Cancelar atendimento?"
+        description="O cancelamento é definitivo. Para atender o paciente depois, será necessário criar outro agendamento."
+        confirmLabel="Cancelar atendimento" onCancel={() => setCancelTarget(null)} onConfirm={handleDelete} />
     </div>
   )
 }

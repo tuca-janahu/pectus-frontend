@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, type ReactNode } from 'react'
+import { useState, useRef, useEffect, useCallback, useId, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { IconChevronDown } from '../icons'
 
 export interface DropdownOption {
@@ -35,20 +36,56 @@ export function Dropdown({
 }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [position, setPosition] = useState<{ left: number; top?: number; bottom?: number; width: number; maxHeight: number } | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
-  const selectId = id || `dropdown-${Math.random().toString(36).substring(2, 9)}`
+  const generatedId = useId()
+  const selectId = id || generatedId
+
+  const updatePosition = useCallback(() => {
+    const rect = buttonRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const abaixo = window.innerHeight - rect.bottom - 8
+    const acima = rect.top - 8
+    const abrirAcima = abaixo < 280 && acima > abaixo
+    setPosition({
+      left: rect.left,
+      width: rect.width,
+      ...(abrirAcima ? { bottom: window.innerHeight - rect.top + 4 } : { top: rect.bottom + 4 }),
+      maxHeight: Math.max(100, Math.min(296, abrirAcima ? acima - 4 : abaixo - 4)),
+    })
+  }, [])
 
   // Fechar o dropdown se clicar fora dele
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (!dropdownRef.current?.contains(event.target as Node) && !menuRef.current?.contains(event.target as Node)) {
         setIsOpen(false)
       }
     }
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') setIsOpen(false)
+    }
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
   }, [])
+
+  useEffect(() => {
+    if (!isOpen) return
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [isOpen, updatePosition])
 
   // Filtrar opções com base na pesquisa
   const filteredOptions = options.filter(opt =>
@@ -75,10 +112,14 @@ export function Dropdown({
       <div className="relative">
         {/* Botão que simula o Select Nativo */}
         <button
+          ref={buttonRef}
           type="button"
           id={selectId}
           disabled={disabled}
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => {
+            if (!isOpen) updatePosition()
+            setIsOpen(!isOpen)
+          }}
           className={`
             relative flex w-full items-center justify-between rounded-tm-input border bg-tm-surface-2 py-2.5 pr-4 text-left text-tm-md font-tm-body transition-colors
             focus:border-tm-primary focus:outline-none focus:ring-1 focus:ring-tm-primary
@@ -104,8 +145,8 @@ export function Dropdown({
         </button>
 
         {/* Menu Suspenso com Filtro */}
-        {isOpen && !disabled && (
-          <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-tm-card border border-tm-border bg-tm-surface shadow-lg animate-in fade-in slide-in-from-top-2">
+        {isOpen && !disabled && position && createPortal(
+          <div ref={menuRef} style={position} className="fixed z-[100] overflow-hidden rounded-tm-card border border-tm-border bg-tm-surface shadow-lg animate-in fade-in slide-in-from-top-2">
             
             {/* Campo de Busca */}
             <div className="sticky top-0 z-10 border-b border-tm-border bg-tm-surface p-2">
@@ -121,7 +162,7 @@ export function Dropdown({
             </div>
             
             {/* Lista de Opções Limitada com Scroll */}
-            <ul className="max-h-60 overflow-y-auto py-1">
+            <ul className="overflow-y-auto py-1" style={{ maxHeight: Math.max(48, position.maxHeight - 54) }}>
               {filteredOptions.length === 0 ? (
                 <li className="px-4 py-3 text-center text-tm-sm text-tm-fg-muted">
                   Nenhum resultado encontrado.
@@ -140,7 +181,7 @@ export function Dropdown({
                 ))
               )}
             </ul>
-          </div>
+          </div>, document.body
         )}
       </div>
       

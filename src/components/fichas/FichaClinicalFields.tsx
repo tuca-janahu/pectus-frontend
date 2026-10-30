@@ -189,7 +189,7 @@ export function FichaClinicalFields({ value, onChange, disabled }: FichaClinical
         <div className="border-b border-tm-border bg-tm-surface-2 px-4 py-4 sm:px-5">
           <h3 className="text-tm-lg font-bold text-tm-fg">Histórico clínico</h3>
           <p className="mt-0.5 text-tm-sm text-tm-fg-muted">
-            Revise as informações recuperadas da última ficha concluída e atualize somente o que mudou.
+            Revise o estado atual da ficha longitudinal e atualize somente o que mudou neste atendimento.
           </p>
         </div>
 

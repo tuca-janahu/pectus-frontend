@@ -18,6 +18,7 @@ import type { PacienteResumo } from '../../lib/api'
 import { toastError, toastSuccess } from '../../lib/toast'
 import { useAuth } from '../../auth/AuthContext'
 import { AtendimentoMidias } from './AtendimentoMidias'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
 
 const AVATAR_COLORS: AvatarColor[] = ['sky', 'teal', 'violet', 'rose', 'amber']
 
@@ -50,6 +51,7 @@ export function FichaAoVivo({ pacienteIdInicial, onCancel, onSuccess }: FichaAoV
   const [clinical, setClinical] = useState<FichaClinicalValues>({ ...EMPTY_CLINICAL_VALUES })
   const [draft, setDraft] = useState<Ficha | null>(null)
   const [loading, setLoading] = useState(false)
+  const [cancelOpen, setCancelOpen] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -130,10 +132,10 @@ export function FichaAoVivo({ pacienteIdInicial, onCancel, onSuccess }: FichaAoV
       onCancel()
       return
     }
-    if (!window.confirm('Cancelar este atendimento? Esta ação não poderá ser revertida.')) return
     setLoading(true)
     try {
       await deleteFicha(accessToken, draft.id)
+      setCancelOpen(false)
       toastSuccess('Atendimento cancelado.')
       onCancel()
     } catch (err) {
@@ -197,7 +199,7 @@ export function FichaAoVivo({ pacienteIdInicial, onCancel, onSuccess }: FichaAoV
           <h2 className="truncate text-tm-xl font-bold text-tm-fg">{paciente?.nome ?? 'Atendimento em andamento'}</h2>
           <p className="text-tm-sm text-tm-fg-muted">{draft.data.split('-').reverse().join('/')} às {draft.hora}</p>
         </div>
-        <Button variant="ghost" onClick={cancelar} icon={<IconClose size={16} />} disabled={loading}>
+        <Button variant="ghost" onClick={() => setCancelOpen(true)} icon={<IconClose size={16} />} disabled={loading}>
           Cancelar atendimento
         </Button>
       </div>
@@ -235,6 +237,9 @@ export function FichaAoVivo({ pacienteIdInicial, onCancel, onSuccess }: FichaAoV
           </Button>
         </div>
       </div>
+      <ConfirmDialog open={cancelOpen} title="Cancelar atendimento?"
+        description="O cancelamento é definitivo. Para atender o paciente depois, será necessário criar outro agendamento."
+        confirmLabel="Cancelar atendimento" onCancel={() => setCancelOpen(false)} onConfirm={cancelar} />
     </Card>
   )
 }
