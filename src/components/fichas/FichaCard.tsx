@@ -1,6 +1,6 @@
 import { Avatar, Button, IconButton, StatusBadge } from '../ui'
 import type { AvatarColor } from '../ui'
-import { IconEdit, IconMessage, IconStethoscope, IconTrash } from '../icons'
+import { IconEdit, IconStethoscope, IconTrash } from '../icons'
 import type { Ficha } from '../../lib/fichasStore'
 
 interface FichaCardProps {
@@ -51,11 +51,6 @@ export function FichaCard({
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-tm-base text-tm-fg-muted">
             <span className="font-medium">{ficha.procedimento}{ficha.procedimentoOutro ? ` — ${ficha.procedimentoOutro}` : ''}</span>
             {ficha.descricao && <span className="min-w-0 truncate" title={ficha.descricao}>· {ficha.descricao}</span>}
-            {ficha.modo === 'ao-vivo' && (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-tm-accent-green-bg px-2 py-0.5 text-tm-xs font-bold text-tm-accent-green-fg">
-                <IconMessage size={11} /> Ao vivo
-              </span>
-            )}
           </div>
         </div>
       </div>

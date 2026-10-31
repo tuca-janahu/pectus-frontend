@@ -573,7 +573,7 @@ export function CalendarioPage() {
             variant="primary"
             size="sm"
             icon={<IconPlus size={16} />}
-            onClick={() => navigate(`/fichas/nova/agendamento?data=${diaSelecionado}`)}
+            onClick={() => navigate(`/fichas/nova?data=${diaSelecionado}`)}
           >
             Novo Agendamento
           </Button>
@@ -598,7 +598,7 @@ export function CalendarioPage() {
                 <Button
                   size="sm"
                   icon={<IconPlus size={16} />}
-                  onClick={() => navigate(`/fichas/nova/agendamento?data=${diaSelecionado}`)}
+                  onClick={() => navigate(`/fichas/nova?data=${diaSelecionado}`)}
                 >
                   Agendar paciente
                 </Button>

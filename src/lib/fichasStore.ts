@@ -78,7 +78,6 @@ export interface Ficha extends FichaClinicalValues {
   procedimentoOutro: string
   status: FichaStatus
   descricao: string
-  modo: 'previa' | 'ao-vivo'
   criadoEm: string
   statusApi: ApiStatus
   historico: ApiFicha['historico']
@@ -95,7 +94,6 @@ export interface FichaInput extends Partial<FichaClinicalValues> {
   procedimentoOutro?: string
   status: FichaStatus
   descricao: string
-  modo?: 'previa' | 'ao-vivo'
 }
 
 async function request<T>(accessToken: string, path: string, init?: RequestInit): Promise<T> {
@@ -117,7 +115,7 @@ function statusParaTela(status: ApiStatus): FichaStatus {
   return status.toLowerCase() as FichaStatus
 }
 
-function paraFicha(api: ApiFicha, modo: Ficha['modo'] = 'previa'): Ficha {
+function paraFicha(api: ApiFicha): Ficha {
   const dataHora = new Date(api.dataHoraPrevista)
   const data = `${dataHora.getFullYear()}-${String(dataHora.getMonth() + 1).padStart(2, '0')}-${String(dataHora.getDate()).padStart(2, '0')}`
   const hora = `${String(dataHora.getHours()).padStart(2, '0')}:${String(dataHora.getMinutes()).padStart(2, '0')}`
@@ -144,7 +142,6 @@ function paraFicha(api: ApiFicha, modo: Ficha['modo'] = 'previa'): Ficha {
     possuiLaringoscopia: api.ficha.possuiLaringoscopia,
     achadoLaringoscopia: api.ficha.achadoLaringoscopia ?? '',
     particularidades: api.ficha.particularidades ?? '',
-    modo,
     criadoEm: api.criadoEm,
     statusApi: api.status,
     historico: api.historico ?? [],
@@ -221,8 +218,8 @@ export async function alterarSituacaoFicha(accessToken: string, atendimentoId: n
 }
 
 export async function createFicha(accessToken: string, medicoId: number, input: FichaInput): Promise<Ficha> {
-  const iniciarAgora = input.status === 'pendente' || input.status === 'concluida'
-  let { atendimento: ficha } = await request<{ atendimento: ApiFicha }>(accessToken, '/atendimentos', {
+  if (input.status !== 'agendada') throw new Error('Novos atendimentos devem ser agendados antes de iniciar.')
+  const { atendimento } = await request<{ atendimento: ApiFicha }>(accessToken, '/atendimentos', {
     method: 'POST',
     body: JSON.stringify({
       pacienteId: input.pacienteId,
@@ -231,33 +228,10 @@ export async function createFicha(accessToken: string, medicoId: number, input: 
       procedimento: input.procedimento,
       procedimentoOutro: input.procedimento === 'Outro' ? input.procedimentoOutro : null,
       observacoes: input.descricao || null,
-      iniciarAgora,
     }),
   })
 
-  if (iniciarAgora && Object.keys(camposClinicosPayload(input)).length > 0) {
-    ;({ atendimento: ficha } = await request<{ atendimento: ApiFicha }>(accessToken, `/atendimentos/${ficha.id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({
-        procedimento: input.procedimento,
-        procedimentoOutro: input.procedimento === 'Outro' ? input.procedimentoOutro : null,
-        observacoes: input.descricao || null,
-        clinico: camposClinicosPayload(input),
-      }),
-    }))
-  }
-
-  if (input.status === 'concluida') {
-    ;({ atendimento: ficha } = await request<{ atendimento: ApiFicha }>(accessToken, `/atendimentos/${ficha.id}/concluir`, {
-      method: 'POST',
-    }))
-  } else if (input.status === 'cancelada') {
-    ;({ atendimento: ficha } = await request<{ atendimento: ApiFicha }>(accessToken, `/atendimentos/${ficha.id}/cancelar`, {
-      method: 'POST',
-    }))
-  }
-
-  return paraFicha(ficha, input.modo)
+  return paraFicha(atendimento)
 }
 
 export async function updateFicha(
@@ -277,7 +251,7 @@ export async function updateFicha(
         clinico: camposClinicosPayload(input),
       }),
     }))
-    return paraFicha(ficha, input.modo)
+    return paraFicha(ficha)
   }
   if (ficha.status === 'CANCELADA') {
     throw new Error('Fichas concluídas ou canceladas não podem ser alteradas.')
@@ -287,7 +261,7 @@ export async function updateFicha(
     ;({ atendimento: ficha } = await request<{ atendimento: ApiFicha }>(accessToken, `/atendimentos/${id}/cancelar`, {
       method: 'POST',
     }))
-    return paraFicha(ficha, input.modo)
+    return paraFicha(ficha)
   }
 
   if (ficha.status === 'AGENDADA') {
@@ -301,7 +275,7 @@ export async function updateFicha(
         observacoes: input.descricao || null,
       }),
     }))
-    if (input.status === 'agendada') return paraFicha(ficha, input.modo)
+    if (input.status === 'agendada') return paraFicha(ficha)
     ;({ atendimento: ficha } = await request<{ atendimento: ApiFicha }>(accessToken, `/atendimentos/${id}/iniciar`, {
       method: 'POST',
     }))
@@ -324,7 +298,7 @@ export async function updateFicha(
       method: 'POST',
     }))
   }
-  return paraFicha(ficha, input.modo)
+  return paraFicha(ficha)
 }
 
 export async function deleteFicha(accessToken: string, id: number): Promise<void> {

@@ -24,7 +24,17 @@ import { FichaClinicalFields } from './FichaClinicalFields'
 import { AtendimentoMidias } from './AtendimentoMidias'
 
 function hojeISO(): string {
-  return new Date().toISOString().slice(0, 10)
+  const hoje = new Date()
+  return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`
+}
+
+function proximoHorario(): { data: string; hora: string } {
+  const proximo = new Date()
+  proximo.setHours(proximo.getHours() + 1, 0, 0, 0)
+  return {
+    data: `${proximo.getFullYear()}-${String(proximo.getMonth() + 1).padStart(2, '0')}-${String(proximo.getDate()).padStart(2, '0')}`,
+    hora: `${String(proximo.getHours()).padStart(2, '0')}:00`,
+  }
 }
 
 function calcularIdade(dataNascimento: string): number {
@@ -58,8 +68,9 @@ export function FichaForm({ ficha, pacienteIdInicial, dataInicial, onCancel, onS
   const [loadingPacientes, setLoadingPacientes] = useState(true)
   const novoPacienteForm = usePatientForm()
 
-  const [data, setData] = useState(ficha?.data || dataInicial || hojeISO())
-  const [hora, setHora] = useState(ficha?.hora || '09:00')
+  const [horarioPadrao] = useState(proximoHorario)
+  const [data, setData] = useState(ficha?.data || dataInicial || horarioPadrao.data)
+  const [hora, setHora] = useState(ficha?.hora || (dataInicial && dataInicial !== hojeISO() ? '09:00' : horarioPadrao.hora))
   const [procedimento, setProcedimento] = useState(ficha?.procedimento || '')
   const [procedimentoOutro, setProcedimentoOutro] = useState(ficha?.procedimentoOutro || '')
   const [status, setStatus] = useState<FichaStatus>(ficha?.status || 'agendada')
@@ -70,7 +81,7 @@ export function FichaForm({ ficha, pacienteIdInicial, dataInicial, onCancel, onS
   const [clinical, setClinical] = useState<FichaClinicalValues>(
     ficha ? clinicalValuesFromFicha(ficha) : { ...EMPTY_CLINICAL_VALUES },
   )
-  const [error, setError] = useState<{ pacienteId?: string; data?: string; procedimento?: string }>({})
+  const [error, setError] = useState<{ pacienteId?: string; data?: string; hora?: string; procedimento?: string }>({})
   const [loading, setLoading] = useState(false)
 
   const carregarPacientes = useCallback(async () => {
@@ -128,6 +139,13 @@ export function FichaForm({ ficha, pacienteIdInicial, dataInicial, onCancel, onS
       if (patientError) err.pacienteId = patientError
     }
     if (!data) err.data = 'Informe a data'
+    if (!hora) err.hora = 'Informe o horário'
+    if (status === 'agendada' && data && hora) {
+      const horarioEscolhido = new Date(`${data}T${hora}:00`)
+      if (Number.isNaN(horarioEscolhido.getTime()) || horarioEscolhido <= new Date()) {
+        err.hora = 'Escolha um horário futuro'
+      }
+    }
     if (!procedimento) err.procedimento = 'Selecione o procedimento'
     if (procedimento === 'Outro' && !procedimentoOutro.trim()) err.procedimento = 'Especifique o procedimento'
     if (concluir && !clinical.dataInjuriaTraqueal) {
@@ -158,7 +176,6 @@ export function FichaForm({ ficha, pacienteIdInicial, dataInicial, onCancel, onS
         procedimentoOutro,
         status: concluir ? 'concluida' : status,
         descricao,
-        modo: ficha?.modo ?? 'previa',
         ...(status === 'pendente' || status === 'concluida' ? clinical : {}),
       }
       if (!accessToken) throw new Error('Sessão expirada. Entre novamente.')
@@ -198,10 +215,10 @@ export function FichaForm({ ficha, pacienteIdInicial, dataInicial, onCancel, onS
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-tm-lg font-bold tracking-[-0.01em] text-tm-fg">
-            {isEditing ? 'Editar atendimento' : 'Novo atendimento'}
+            {isEditing ? 'Editar atendimento' : 'Agendar atendimento'}
           </div>
           <div className="text-tm-sm text-tm-fg-muted">
-            {isEditing ? 'Atualize os dados do procedimento.' : 'Registre um novo procedimento.'}
+            {isEditing ? 'Atualize os dados do procedimento.' : 'Defina paciente, horário e procedimento. A ficha clínica será preenchida após iniciar o atendimento.'}
           </div>
         </div>
         <IconButton icon={<IconClose size={20} />} label="Cancelar" onClick={onCancel} />
@@ -221,6 +238,10 @@ export function FichaForm({ ficha, pacienteIdInicial, dataInicial, onCancel, onS
             )}
           </div>
         )}
+        <div className="border-b border-tm-border pb-2">
+          <h3 className="text-tm-base font-semibold text-tm-fg">Paciente</h3>
+          <p className="text-tm-sm text-tm-fg-muted">Selecione um cadastro existente ou cadastre um novo paciente.</p>
+        </div>
         {modoPaciente === 'existente' ? (
           <div className="flex flex-col gap-2">
             <Dropdown
@@ -261,11 +282,19 @@ export function FichaForm({ ficha, pacienteIdInicial, dataInicial, onCancel, onS
           </div>
         )}
 
+        <div className="mt-2 border-b border-tm-border pb-2">
+          <h3 className="text-tm-base font-semibold text-tm-fg">Data e horário</h3>
+          <p className="text-tm-sm text-tm-fg-muted">Cada atendimento reserva 60 minutos na agenda do paciente e do médico.</p>
+        </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="Data" type="date" value={data} onChange={(e) => setData(e.target.value)} error={error.data} disabled={loading || (!!ficha && status !== 'agendada')} />
-          <Input label="Horário" type="time" value={hora} onChange={(e) => setHora(e.target.value)} disabled={loading || (!!ficha && status !== 'agendada')} />
+          <Input label="Data" type="date" min={!ficha ? hojeISO() : undefined} value={data} onChange={(e) => { setData(e.target.value); setError((atual) => ({ ...atual, data: undefined, hora: undefined })) }} error={error.data} disabled={loading || (!!ficha && status !== 'agendada')} required />
+          <Input label="Horário" type="time" value={hora} onChange={(e) => { setHora(e.target.value); setError((atual) => ({ ...atual, hora: undefined })) }} error={error.hora} disabled={loading || (!!ficha && status !== 'agendada')} required />
         </div>
 
+        <div className="mt-2 border-b border-tm-border pb-2">
+          <h3 className="text-tm-base font-semibold text-tm-fg">Procedimento</h3>
+          <p className="text-tm-sm text-tm-fg-muted">Escolha o tipo de atendimento e registre orientações, se necessário.</p>
+        </div>
         <Select
           label="Procedimento"
           value={procedimento}

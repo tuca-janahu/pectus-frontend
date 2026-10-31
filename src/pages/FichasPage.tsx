@@ -5,9 +5,7 @@ import type { AvatarColor } from '../components/ui'
 import { IconCalendar, IconList, IconPlus } from '../components/icons'
 import { FichaCard } from '../components/fichas/FichaCard'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
-import { NovaFichaChooser } from '../components/fichas/NovaFichaChooser'
 import { FichaForm } from '../components/fichas/FichaForm'
-import { FichaAoVivo } from '../components/fichas/FichaAoVivo'
 import { useAuth } from '../auth/AuthContext'
 import { listPacientes, ApiError, type PacienteResumo } from '../lib/api'
 import { listFichas, deleteFicha, iniciarAtendimento, type Ficha } from '../lib/fichasStore'
@@ -170,19 +168,11 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
   }
 
   if (pathname === '/fichas/nova') {
-    return (
-      <NovaFichaChooser
-        onChoose={(id) => navigate(`${id === 'form' ? '/fichas/nova/agendamento' : '/fichas/nova/atendimento'}${location.search}`)}
-      />
-    )
-  }
-
-  if (pathname === '/fichas/nova/agendamento') {
     return <FichaForm pacienteIdInicial={pacienteIdInicial} dataInicial={dataInicial} onCancel={backToList} onSuccess={handleSaved} />
   }
 
-  if (pathname === '/fichas/nova/atendimento') {
-    return <FichaAoVivo pacienteIdInicial={pacienteIdInicial} onCancel={backToList} onSuccess={handleSaved} />
+  if (pathname === '/fichas/nova/agendamento' || pathname === '/fichas/nova/atendimento') {
+    return <Navigate to={`/fichas/nova${location.search}`} replace />
   }
 
   if (editMatch) {
