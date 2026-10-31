@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../auth/AuthContext'
+import { IconCamera } from '../icons'
 import { listMidias, removerMidia, uploadMidia, type MidiaAtendimento } from '../../lib/fichasStore'
 import { toastError, toastSuccess } from '../../lib/toast'
 
 const LIMITE_VIDEO_MB = Number(import.meta.env.VITE_MAX_VIDEO_MB ?? 100)
 
-export function AtendimentoMidias({ atendimentoId, podeEditar }: { atendimentoId: number; podeEditar: boolean }) {
+export function AtendimentoMidias({ atendimentoId, podeEditar, embedded = false }: { atendimentoId: number; podeEditar: boolean; embedded?: boolean }) {
   const { accessToken } = useAuth()
   const [midias, setMidias] = useState<MidiaAtendimento[]>([])
   const [enviando, setEnviando] = useState(false)
@@ -41,22 +42,25 @@ export function AtendimentoMidias({ atendimentoId, podeEditar }: { atendimentoId
   }
 
   return (
-    <section className="flex flex-col gap-3 border-t border-tm-border pt-4">
-      <h3 className="text-tm-base font-semibold text-tm-fg">Fotos e vídeos deste atendimento</h3>
+    <section className={`flex flex-col gap-3 ${embedded ? '' : 'border-t border-tm-border pt-4'}`}>
+      {!embedded && <h3 className="text-tm-base font-semibold text-tm-fg">Fotos e vídeos deste atendimento</h3>}
       {podeEditar && <label className="cursor-pointer self-start rounded-tm-button border border-tm-border px-3 py-2 text-tm-sm text-tm-primary">
         {enviando ? 'Enviando...' : 'Adicionar imagem ou vídeo'}
         <input className="hidden" type="file" accept="image/jpeg,image/png,video/mp4" disabled={enviando} onChange={(event) => {
           void enviar(event.target.files?.[0]); event.target.value = ''
         }} />
       </label>}
-      {midias.length === 0 ? <p className="text-tm-sm text-tm-fg-muted">Nenhuma mídia registrada.</p> : (
+      {midias.length === 0 ? <div className="flex flex-col items-center gap-2 rounded-tm-card border border-dashed border-tm-border bg-tm-surface-2 px-4 py-8 text-center">
+        <IconCamera size={24} className="text-tm-fg-subtle" />
+        <p className="text-tm-sm text-tm-fg-muted">Nenhuma foto ou vídeo registrado neste atendimento.</p>
+      </div> : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {midias.map((midia) => <div key={midia.id} className="rounded-tm-card border border-tm-border p-2">
+          {midias.map((midia) => <div key={midia.id} className="min-w-0 overflow-hidden rounded-tm-card border border-tm-border bg-tm-surface">
             {midia.mimeType === 'video/mp4'
-              ? <video controls preload="metadata" src={midia.url} className="w-full rounded-tm-sm" />
-              : <img src={midia.url} alt={midia.nomeOriginal} className="max-h-64 w-full rounded-tm-sm object-contain" />}
-            <div className="mt-2 flex items-center justify-between gap-2 text-tm-xs text-tm-fg-muted">
-              <span className="truncate">{midia.nomeOriginal}</span>
+              ? <video controls preload="metadata" src={midia.url} className="aspect-video w-full bg-black object-contain" />
+              : <img src={midia.url} alt={midia.nomeOriginal} loading="lazy" className="aspect-video w-full bg-tm-surface-2 object-contain" />}
+            <div className="flex items-center justify-between gap-2 px-3 py-2 text-tm-xs text-tm-fg-muted">
+              <span className="min-w-0 truncate" title={midia.nomeOriginal}>{midia.nomeOriginal}</span>
               {podeEditar && <button type="button" onClick={() => void remover(midia.id)} className="text-tm-error-text">Remover</button>}
             </div>
           </div>)}

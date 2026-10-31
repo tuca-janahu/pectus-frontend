@@ -20,7 +20,7 @@ import { toastError, toastSuccess } from '../../lib/toast'
 import { PatientForm } from '../../components/pacientes/PatientForm'
 import { FichaCard } from '../../components/fichas/FichaCard'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
-import { AtendimentoMidias } from '../../components/fichas/AtendimentoMidias'
+import { AtendimentoDetalhes } from '../../components/fichas/AtendimentoDetalhes'
 import { deleteFicha, getFichaPaciente, iniciarAtendimento, listAtendimentosPaciente, type Ficha, type FichaLongitudinal } from '../../lib/fichasStore'
 
 const AVATAR_COLORS: AvatarColor[] = ['sky', 'teal', 'violet', 'rose', 'amber']
@@ -424,18 +424,7 @@ export function PacienteDetailsPage() {
                       onStart={ficha.status === 'agendada' && user?.roles.includes('MEDICO') && user.medico?.id === ficha.medicoId ? () => iniciarFicha(ficha) : undefined}
                       starting={startingId === ficha.id}
                     />
-                    <details className="rounded-tm-card border border-tm-border px-3 py-2 text-tm-sm text-tm-fg-muted">
-                      <summary className="cursor-pointer">Detalhes, alterações e mídias</summary>
-                      <p className="mt-2">Procedimento: {ficha.procedimento}{ficha.procedimentoOutro ? ` — ${ficha.procedimentoOutro}` : ''}</p>
-                      {ficha.descricao && <p>Observações: {ficha.descricao}</p>}
-                      {ficha.historico.map((evento, index) => <p key={index} className="mt-2">
-                        {new Date(evento.em).toLocaleString('pt-BR')} · {evento.tipo} · Usuário #{evento.autorContaId}
-                        {Object.entries(evento.campos).map(([campo, mudanca]) => <span key={campo} className="block pl-3">
-                          {campo}: {descreverMudanca(mudanca)}
-                        </span>)}
-                      </p>)}
-                      <AtendimentoMidias atendimentoId={ficha.id} podeEditar={false} />
-                    </details>
+                    <AtendimentoDetalhes ficha={ficha} />
                   </div>
                 ))}
               </div>
