@@ -14,7 +14,7 @@ import {
 export type RouteId =
   | "home"
   | "dashboard"
-  | "fichas"
+  | "atendimentos"
   | "calendario"
   | "busca"
   | "admin"
@@ -44,9 +44,9 @@ export const TM_NAV_ITEMS: NavItem[] = [
     subtitle: "Visão geral da clínica",
   },
   {
-    id: "fichas",
+    id: "atendimentos",
     label: "Atendimentos",
-    path: "/fichas",
+    path: "/atendimentos",
     icon: <IconList size={20} />,
     subtitle: "Histórico e agenda clínica",
   },

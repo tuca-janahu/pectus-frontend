@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthContext'
 import { IconArrowRight, IconCalendar, IconChevronRight, IconPlus, IconRefresh } from '../components/icons'
 import { Avatar, Button, Card, EmptyState, StatusBadge, type AvatarColor } from '../components/ui'
 import { listPacientes, type AuthUser, type PacienteResumo } from '../lib/api'
-import { listFichas, type Ficha } from '../lib/fichasStore'
+import { listAtendimentos, type Atendimento } from '../lib/atendimentosStore'
 
 const AVATAR_COLORS: AvatarColor[] = ['sky', 'teal', 'violet', 'rose', 'amber']
 
@@ -27,23 +27,23 @@ function obterIniciais(nome: string): string {
   return '?'
 }
 
-function ordenarPorDataHora(a: Ficha, b: Ficha): number {
+function ordenarPorDataHora(a: Atendimento, b: Atendimento): number {
   return `${a.data}T${a.hora}`.localeCompare(`${b.data}T${b.hora}`)
 }
 
-function selecionarAgenda(fichas: Ficha[], user: AuthUser, hoje = hojeISO()) {
-  const fichasVisiveis = user.roles.includes('MEDICO')
+function selecionarAgenda(atendimentos: Atendimento[], user: AuthUser, hoje = hojeISO()) {
+  const atendimentosVisiveis = user.roles.includes('MEDICO')
     ? user.medico
-      ? fichas.filter((ficha) => ficha.medicoId === user.medico?.id)
+      ? atendimentos.filter((atendimento) => atendimento.medicoId === user.medico?.id)
       : []
-    : fichas
+    : atendimentos
 
-  const deHoje = fichasVisiveis
-    .filter((ficha) => ficha.data === hoje && (ficha.status === 'agendada' || ficha.status === 'pendente'))
+  const deHoje = atendimentosVisiveis
+    .filter((atendimento) => atendimento.data === hoje && (atendimento.status === 'agendada' || atendimento.status === 'pendente'))
     .sort(ordenarPorDataHora)
 
-  const proximas = fichasVisiveis
-    .filter((ficha) => ficha.data > hoje && ficha.status === 'agendada')
+  const proximas = atendimentosVisiveis
+    .filter((atendimento) => atendimento.data > hoje && atendimento.status === 'agendada')
     .sort(ordenarPorDataHora)
     .slice(0, 5)
 
@@ -60,36 +60,36 @@ function formatarData(iso: string): string {
   return texto.charAt(0).toUpperCase() + texto.slice(1)
 }
 
-function agruparPorData(fichas: Ficha[]): Array<{ data: string; fichas: Ficha[] }> {
-  const grupos = new Map<string, Ficha[]>()
-  fichas.forEach((ficha) => {
-    const grupo = grupos.get(ficha.data) ?? []
-    grupo.push(ficha)
-    grupos.set(ficha.data, grupo)
+function agruparPorData(atendimentos: Atendimento[]): Array<{ data: string; atendimentos: Atendimento[] }> {
+  const grupos = new Map<string, Atendimento[]>()
+  atendimentos.forEach((atendimento) => {
+    const grupo = grupos.get(atendimento.data) ?? []
+    grupo.push(atendimento)
+    grupos.set(atendimento.data, grupo)
   })
-  return Array.from(grupos, ([data, itens]) => ({ data, fichas: itens }))
+  return Array.from(grupos, ([data, itens]) => ({ data, atendimentos: itens }))
 }
 
-function LinhaDaAgenda({ ficha, pacientes }: { ficha: Ficha; pacientes: PacienteResumo[] }) {
+function LinhaDaAgenda({ atendimento, pacientes }: { atendimento: Atendimento; pacientes: PacienteResumo[] }) {
   const navigate = useNavigate()
-  const paciente = pacientes.find((item) => item.id === ficha.pacienteId)
+  const paciente = pacientes.find((item) => item.id === atendimento.pacienteId)
   const nome = paciente?.nome ?? 'Paciente removido'
 
   return (
     <button
       type="button"
-      onClick={() => navigate(`/fichas/${ficha.id}/editar`)}
+      onClick={() => navigate(`/atendimentos/${atendimento.id}/editar`)}
       className="group flex w-full items-center gap-3 border-b border-tm-border px-4 py-3.5 text-left transition-colors last:border-b-0 hover:bg-tm-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-tm-primary sm:gap-4 sm:px-5"
-      aria-label={`Abrir atendimento de ${nome}, às ${ficha.hora}`}
+      aria-label={`Abrir atendimento de ${nome}, às ${atendimento.hora}`}
     >
       <div className="flex w-14 shrink-0 flex-col items-center border-r border-tm-border pr-3 sm:w-16 sm:pr-4">
-        <span className="text-tm-2xl font-bold tracking-[-0.02em] text-tm-fg">{ficha.hora}</span>
+        <span className="text-tm-2xl font-bold tracking-[-0.02em] text-tm-fg">{atendimento.hora}</span>
         <span className="text-tm-2xs font-semibold uppercase tracking-wider text-tm-fg-subtle">hrs</span>
       </div>
 
       <Avatar
         initials={paciente ? obterIniciais(paciente.nome) : '?'}
-        color={AVATAR_COLORS[ficha.pacienteId % AVATAR_COLORS.length]}
+        color={AVATAR_COLORS[atendimento.pacienteId % AVATAR_COLORS.length]}
         size={40}
         src={paciente?.fotoUrl || undefined}
       />
@@ -97,10 +97,10 @@ function LinhaDaAgenda({ ficha, pacientes }: { ficha: Ficha; pacientes: Paciente
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <span className="truncate text-tm-lg font-semibold tracking-[-0.005em] text-tm-fg">{nome}</span>
-          <StatusBadge status={ficha.status} />
+          <StatusBadge status={atendimento.status} />
         </div>
-        <p className="mt-0.5 truncate text-tm-base text-tm-fg-muted" title={ficha.descricao || undefined}>
-          {ficha.procedimento}{ficha.procedimentoOutro ? ` — ${ficha.procedimentoOutro}` : ''}{ficha.descricao ? ` · ${ficha.descricao}` : ''}
+        <p className="mt-0.5 truncate text-tm-base text-tm-fg-muted" title={atendimento.descricao || undefined}>
+          {atendimento.procedimento}{atendimento.procedimentoOutro ? ` — ${atendimento.procedimentoOutro}` : ''}{atendimento.descricao ? ` · ${atendimento.descricao}` : ''}
         </p>
       </div>
 
@@ -132,7 +132,7 @@ function AgendaSkeleton() {
 export function HomePage() {
   const navigate = useNavigate()
   const { accessToken, user } = useAuth()
-  const [fichas, setFichas] = useState<Ficha[]>([])
+  const [atendimentos, setAtendimentos] = useState<Atendimento[]>([])
   const [pacientes, setPacientes] = useState<PacienteResumo[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -142,11 +142,11 @@ export function HomePage() {
     setLoading(true)
     setError(null)
     try {
-      const [listaFichas, pacientesResponse] = await Promise.all([
-        listFichas(accessToken),
+      const [listaAtendimentos, pacientesResponse] = await Promise.all([
+        listAtendimentos(accessToken),
         listPacientes(accessToken, undefined, true),
       ])
-      setFichas(listaFichas)
+      setAtendimentos(listaAtendimentos)
       setPacientes(pacientesResponse.pacientes)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível carregar sua agenda.')
@@ -160,8 +160,8 @@ export function HomePage() {
   }, [carregarAgenda])
 
   const agenda = useMemo(
-    () => (user ? selecionarAgenda(fichas, user) : { deHoje: [], proximas: [] }),
-    [fichas, user],
+    () => (user ? selecionarAgenda(atendimentos, user) : { deHoje: [], proximas: [] }),
+    [atendimentos, user],
   )
   const proximasPorData = useMemo(() => agruparPorData(agenda.proximas), [agenda.proximas])
   const semAgenda = agenda.deHoje.length === 0 && agenda.proximas.length === 0
@@ -189,7 +189,7 @@ export function HomePage() {
             size="sm"
             variant="secondary"
             iconRight={<IconArrowRight size={15} />}
-            onClick={() => navigate('/fichas')}
+            onClick={() => navigate('/atendimentos')}
           >
             Ver todas
           </Button>
@@ -197,7 +197,7 @@ export function HomePage() {
             className="flex-1 sm:flex-none"
             size="sm"
             icon={<IconPlus size={16} />}
-            onClick={() => navigate('/fichas/nova')}
+            onClick={() => navigate('/atendimentos/novo')}
           >
             Novo atendimento
           </Button>
@@ -255,8 +255,8 @@ export function HomePage() {
                       {agenda.deHoje.length} {agenda.deHoje.length === 1 ? 'atendimento' : 'atendimentos'}
                     </span>
                   </div>
-                  {agenda.deHoje.map((ficha) => (
-                    <LinhaDaAgenda key={ficha.id} ficha={ficha} pacientes={pacientes} />
+                  {agenda.deHoje.map((atendimento) => (
+                    <LinhaDaAgenda key={atendimento.id} atendimento={atendimento} pacientes={pacientes} />
                   ))}
                 </section>
               )}
@@ -275,11 +275,11 @@ export function HomePage() {
                         <span className="text-tm-xs font-semibold text-tm-fg-muted">{formatarData(grupo.data)}</span>
                         <span className="h-px flex-1 bg-tm-border" />
                         <span className="text-tm-xs text-tm-fg-subtle">
-                          {grupo.fichas.length} {grupo.fichas.length === 1 ? 'ficha' : 'fichas'}
+                          {grupo.atendimentos.length} {grupo.atendimentos.length === 1 ? 'atendimento' : 'atendimentos'}
                         </span>
                       </div>
-                      {grupo.fichas.map((ficha) => (
-                        <LinhaDaAgenda key={ficha.id} ficha={ficha} pacientes={pacientes} />
+                      {grupo.atendimentos.map((atendimento) => (
+                        <LinhaDaAgenda key={atendimento.id} atendimento={atendimento} pacientes={pacientes} />
                       ))}
                     </div>
                   ))}

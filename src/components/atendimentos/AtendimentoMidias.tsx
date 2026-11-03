@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../auth/AuthContext'
 import { IconCamera } from '../icons'
-import { listMidias, removerMidia, uploadMidia, type MidiaAtendimento } from '../../lib/fichasStore'
+import { listMidias, removerMidia, uploadMidia, type MidiaAtendimento } from '../../lib/atendimentosStore'
 import { toastError, toastSuccess } from '../../lib/toast'
 
 const LIMITE_VIDEO_MB = Number(import.meta.env.VITE_MAX_VIDEO_MB ?? 100)

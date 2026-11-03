@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { IconActivity, IconCamera, IconChevronDown, IconClock } from '../icons'
-import type { Ficha } from '../../lib/fichasStore'
+import type { Atendimento } from '../../lib/atendimentosStore'
 import { AtendimentoMidias } from './AtendimentoMidias'
 
 type Aba = 'detalhes' | 'alteracoes' | 'midias'
-type Evento = Ficha['historico'][number]
+type Evento = Atendimento['historico'][number]
 
 const EVENTOS: Record<string, string> = {
   CRIADO: 'Atendimento criado',
@@ -108,13 +108,13 @@ function Mudancas({ evento }: { evento: Evento }) {
   )
 }
 
-export function AtendimentoDetalhes({ ficha }: { ficha: Ficha }) {
+export function AtendimentoDetalhes({ atendimento }: { atendimento: Atendimento }) {
   const [aberto, setAberto] = useState(false)
   const [aba, setAba] = useState<Aba>('detalhes')
-  const painelId = `atendimento-${ficha.id}-painel`
+  const painelId = `atendimento-${atendimento.id}-painel`
   const abas: Array<{ id: Aba; label: string; icon: typeof IconActivity }> = [
     { id: 'detalhes', label: 'Detalhes', icon: IconActivity },
-    { id: 'alteracoes', label: `Alterações (${ficha.historico.length})`, icon: IconClock },
+    { id: 'alteracoes', label: `Alterações (${atendimento.historico.length})`, icon: IconClock },
     { id: 'midias', label: 'Mídias', icon: IconCamera },
   ]
 
@@ -133,7 +133,7 @@ export function AtendimentoDetalhes({ ficha }: { ficha: Ficha }) {
 
       {aberto && (
         <div id={painelId} className="border-t border-tm-border">
-          <div className="flex gap-1 overflow-x-auto border-b border-tm-border px-3 pt-2" role="group" aria-label={`Seções do atendimento ${ficha.id}`}>
+          <div className="flex gap-1 overflow-x-auto border-b border-tm-border px-3 pt-2" role="group" aria-label={`Seções do atendimento ${atendimento.id}`}>
             {abas.map(({ id, label, icon: Icone }) => (
               <button
                 key={id}
@@ -153,22 +153,22 @@ export function AtendimentoDetalhes({ ficha }: { ficha: Ficha }) {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-tm-card border border-tm-border bg-tm-surface-2 p-4">
                   <h4 className="mb-2 text-tm-xs font-semibold uppercase tracking-wide text-tm-fg-subtle">Procedimento</h4>
-                  <p className="text-tm-base font-medium text-tm-fg">{ficha.procedimento || 'Não informado'}</p>
-                  {ficha.procedimentoOutro && <p className="mt-1 text-tm-sm text-tm-fg-muted">{ficha.procedimentoOutro}</p>}
+                  <p className="text-tm-base font-medium text-tm-fg">{atendimento.procedimento || 'Não informado'}</p>
+                  {atendimento.procedimentoOutro && <p className="mt-1 text-tm-sm text-tm-fg-muted">{atendimento.procedimentoOutro}</p>}
                 </div>
                 <div className="rounded-tm-card border border-tm-border bg-tm-surface-2 p-4">
                   <h4 className="mb-2 text-tm-xs font-semibold uppercase tracking-wide text-tm-fg-subtle">Observações</h4>
-                  <p className="whitespace-pre-wrap break-words text-tm-sm text-tm-fg">{ficha.descricao || 'Nenhuma observação registrada.'}</p>
+                  <p className="whitespace-pre-wrap break-words text-tm-sm text-tm-fg">{atendimento.descricao || 'Nenhuma observação registrada.'}</p>
                 </div>
               </div>
             )}
 
             {aba === 'alteracoes' && (
-              ficha.historico.length === 0 ? (
+              atendimento.historico.length === 0 ? (
                 <p className="text-tm-sm text-tm-fg-muted">Nenhuma alteração registrada neste atendimento.</p>
               ) : (
                 <ol className="space-y-3">
-                  {ficha.historico.map((evento, index) => (
+                  {atendimento.historico.map((evento, index) => (
                     <li key={`${evento.em}-${index}`} className="flex gap-3">
                       <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-tm-primary" aria-hidden="true" />
                       <div className="min-w-0 flex-1 rounded-tm-card border border-tm-border bg-tm-surface-2 p-3">
@@ -185,7 +185,7 @@ export function AtendimentoDetalhes({ ficha }: { ficha: Ficha }) {
               )
             )}
 
-            {aba === 'midias' && <AtendimentoMidias atendimentoId={ficha.id} podeEditar={false} embedded />}
+            {aba === 'midias' && <AtendimentoMidias atendimentoId={atendimento.id} podeEditar={false} embedded />}
           </div>
         </div>
       )}

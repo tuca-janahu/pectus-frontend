@@ -43,7 +43,7 @@ interface CreatedAccount {
 
 const ROLE_OPTIONS: { value: Papel; label: string; sub: string }[] = [
   { value: 'ADMIN', label: 'Administrador', sub: 'Acesso total ao sistema' },
-  { value: 'MEDICO', label: 'Médico(a)', sub: 'Fichas, pacientes e agenda' },
+  { value: 'MEDICO', label: 'Médico(a)', sub: 'Atendimentos, pacientes e agenda' },
 ]
 
 const ROLE_LABEL: Record<Papel, string> = { ADMIN: 'Administrador', MEDICO: 'Médico(a)' }

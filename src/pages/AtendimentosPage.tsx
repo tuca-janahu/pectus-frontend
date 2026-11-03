@@ -3,12 +3,12 @@ import { matchPath, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { Card, EmptyState } from '../components/ui'
 import type { AvatarColor } from '../components/ui'
 import { IconCalendar, IconList, IconPlus } from '../components/icons'
-import { FichaCard } from '../components/fichas/FichaCard'
+import { AtendimentoCard } from '../components/atendimentos/AtendimentoCard'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
-import { FichaForm } from '../components/fichas/FichaForm'
+import { AtendimentoForm } from '../components/atendimentos/AtendimentoForm'
 import { useAuth } from '../auth/AuthContext'
 import { listPacientes, ApiError, type PacienteResumo } from '../lib/api'
-import { listFichas, deleteFicha, iniciarAtendimento, type Ficha } from '../lib/fichasStore'
+import { listAtendimentos, cancelarAtendimento, iniciarAtendimento, type Atendimento } from '../lib/atendimentosStore'
 import { toastError, toastSuccess } from '../lib/toast'
 
 const AVATAR_COLORS: AvatarColor[] = ['sky', 'teal', 'violet', 'rose', 'amber']
@@ -56,39 +56,39 @@ const FILTROS: { id: Filtro; label: string }[] = [
   { id: 'cancelada', label: 'Cancelados' },
 ]
 
-export interface FichasPageProps {
+export interface AtendimentosPageProps {
   onCountChange?: (count: number) => void
 }
 
-export function FichasPage({ onCountChange }: FichasPageProps) {
+export function AtendimentosPage({ onCountChange }: AtendimentosPageProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const { accessToken, user } = useAuth()
 
   const [filtro, setFiltro] = useState<Filtro>('todas')
 
-  const [fichas, setFichas] = useState<Ficha[]>([])
+  const [atendimentos, setAtendimentos] = useState<Atendimento[]>([])
   const [pacientes, setPacientes] = useState<PacienteResumo[]>([])
   const [loading, setLoading] = useState(true)
   const [startingId, setStartingId] = useState<number | null>(null)
-  const [cancelTarget, setCancelTarget] = useState<Ficha | null>(null)
+  const [cancelTarget, setCancelTarget] = useState<Atendimento | null>(null)
 
   const pathname = location.pathname.replace(/\/+$/, '') || '/'
-  const editMatch = matchPath('/fichas/:id/editar', pathname) ?? matchPath('/fichas/editar/:id', pathname)
+  const editMatch = matchPath('/atendimentos/:id/editar', pathname) ?? matchPath('/atendimentos/editar/:id', pathname)
   const editingId = editMatch ? Number(editMatch.params.id) : undefined
-  const editingFicha = editingId ? fichas.find((ficha) => ficha.id === editingId) : undefined
+  const editingAtendimento = editingId ? atendimentos.find((atendimento) => atendimento.id === editingId) : undefined
   const searchParams = new URLSearchParams(location.search)
   const pacienteIdParam = Number(searchParams.get('pacienteId'))
   const pacienteIdInicial = Number.isInteger(pacienteIdParam) && pacienteIdParam > 0 ? pacienteIdParam : undefined
   const dataParam = searchParams.get('data')
   const dataInicial = dataParam && /^\d{4}-\d{2}-\d{2}$/.test(dataParam) ? dataParam : undefined
   const retornoParam = searchParams.get('retorno')
-  const retorno = retornoParam?.startsWith('/pacientes/') || retornoParam === '/calendario' ? retornoParam : '/fichas'
+  const retorno = retornoParam?.startsWith('/pacientes/') || retornoParam === '/calendario' ? retornoParam : '/atendimentos'
 
-  const carregarFichas = useCallback(async () => {
+  const carregarAtendimentos = useCallback(async () => {
     if (!accessToken) return
-    const lista = await listFichas(accessToken)
-    setFichas(lista)
+    const lista = await listAtendimentos(accessToken)
+    setAtendimentos(lista)
     onCountChange?.(lista.length)
   }, [accessToken, onCountChange])
 
@@ -104,12 +104,12 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
 
   useEffect(() => {
     setLoading(true)
-    Promise.all([carregarFichas(), carregarPacientes()]).finally(() => setLoading(false))
-  }, [carregarFichas, carregarPacientes])
+    Promise.all([carregarAtendimentos(), carregarPacientes()]).finally(() => setLoading(false))
+  }, [carregarAtendimentos, carregarPacientes])
 
   const grouped = useMemo(() => {
-    const filtered = fichas.filter((f) => filtro === 'todas' || f.status === filtro)
-    const map = new Map<string, Ficha[]>()
+    const filtered = atendimentos.filter((f) => filtro === 'todas' || f.status === filtro)
+    const map = new Map<string, Atendimento[]>()
     filtered.forEach((f) => {
       if (!map.has(f.data)) map.set(f.data, [])
       map.get(f.data)!.push(f)
@@ -117,27 +117,27 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
     return [...map.entries()]
       .sort((a, b) => b[0].localeCompare(a[0]))
       .map(([data, items]) => ({ data, items: items.sort((a, b) => a.hora.localeCompare(b.hora)) }))
-  }, [fichas, filtro])
+  }, [atendimentos, filtro])
 
   const openCreate = () => {
-    navigate('/fichas/nova')
+    navigate('/atendimentos/novo')
   }
 
-  const openEdit = (ficha: Ficha) => {
-    navigate(`/fichas/${ficha.id}/editar`)
+  const openEdit = (atendimento: Atendimento) => {
+    navigate(`/atendimentos/${atendimento.id}/editar`)
   }
 
-  const handleStart = async (ficha: Ficha) => {
+  const handleStart = async (atendimento: Atendimento) => {
     if (!accessToken || startingId !== null) return
-    setStartingId(ficha.id)
+    setStartingId(atendimento.id)
     try {
-      const iniciado = await iniciarAtendimento(accessToken, ficha.id)
-      setFichas((atuais) => atuais.map((item) => item.id === iniciado.id ? iniciado : item))
+      const iniciado = await iniciarAtendimento(accessToken, atendimento.id)
+      setAtendimentos((atuais) => atuais.map((item) => item.id === iniciado.id ? iniciado : item))
       toastSuccess('Atendimento iniciado. Preencha a ficha clínica.')
-      openEdit(ficha)
+      openEdit(atendimento)
     } catch (error) {
       toastError(error instanceof Error ? error.message : 'Não foi possível iniciar o atendimento.')
-      await carregarFichas()
+      await carregarAtendimentos()
     } finally {
       setStartingId(null)
     }
@@ -146,10 +146,10 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
   const handleDelete = async () => {
     try {
       if (!accessToken || !cancelTarget) return
-      await deleteFicha(accessToken, cancelTarget.id)
+      await cancelarAtendimento(accessToken, cancelTarget.id)
       setCancelTarget(null)
       toastSuccess('Atendimento cancelado.')
-      await carregarFichas()
+      await carregarAtendimentos()
     } catch (error) {
       toastError(error instanceof Error ? error.message : 'Não foi possível cancelar o atendimento.')
     }
@@ -161,18 +161,18 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
 
   const handleSaved = async () => {
     await Promise.all([
-    carregarFichas(),
+    carregarAtendimentos(),
     carregarPacientes(),
   ])
     backToList()
   }
 
-  if (pathname === '/fichas/nova') {
-    return <FichaForm pacienteIdInicial={pacienteIdInicial} dataInicial={dataInicial} onCancel={backToList} onSuccess={handleSaved} />
+  if (pathname === '/atendimentos/novo') {
+    return <AtendimentoForm pacienteIdInicial={pacienteIdInicial} dataInicial={dataInicial} onCancel={backToList} onSuccess={handleSaved} />
   }
 
-  if (pathname === '/fichas/nova/agendamento' || pathname === '/fichas/nova/atendimento') {
-    return <Navigate to={`/fichas/nova${location.search}`} replace />
+  if (pathname === '/atendimentos/nova' || pathname.startsWith('/atendimentos/nova/')) {
+    return <Navigate to={`/atendimentos/novo${location.search}`} replace />
   }
 
   if (editMatch) {
@@ -180,16 +180,16 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
         return <div className="py-4 text-tm-sm text-tm-fg-muted">Carregando atendimento...</div>
     }
 
-    if (!editingFicha) {
-      return <Navigate to="/fichas" replace />
+    if (!editingAtendimento) {
+      return <Navigate to="/atendimentos" replace />
     }
 
-    return <FichaForm ficha={editingFicha} onCancel={backToList} onSuccess={handleSaved}
-      onStarted={(iniciado) => setFichas((atuais) => atuais.map((item) => item.id === iniciado.id ? iniciado : item))} />
+    return <AtendimentoForm atendimento={editingAtendimento} onCancel={backToList} onSuccess={handleSaved}
+      onStarted={(iniciado) => setAtendimentos((atuais) => atuais.map((item) => item.id === iniciado.id ? iniciado : item))} />
   }
 
-  if (pathname !== '/fichas') {
-    return <Navigate to="/fichas" replace />
+  if (pathname !== '/atendimentos') {
+    return <Navigate to="/atendimentos" replace />
   }
 
   return (
@@ -260,9 +260,9 @@ export function FichasPage({ onCountChange }: FichasPageProps) {
                   {items.map((f) => {
                     const p = pacientes.find((x) => x.id === f.pacienteId)
                     return (
-                      <FichaCard
+                      <AtendimentoCard
                         key={f.id}
-                        ficha={f}
+                        atendimento={f}
                         pacienteNome={p?.nome ?? 'Paciente removido'}
                         iniciais={p ? obterIniciais(p.nome) : '?'}
                         avatarColor={AVATAR_COLORS[f.pacienteId % AVATAR_COLORS.length]}

@@ -17,7 +17,7 @@ interface PatientFormFieldsProps {
 }
 
 // Campos do cadastro de paciente, extraídos de PatientForm para serem
-// reaproveitados dentro do formulário de ficha (sem duplicar o formulário).
+// reaproveitados dentro do formulário de atendimento (sem duplicar o formulário).
 export function PatientFormFields({ form, loading = false }: PatientFormFieldsProps) {
   return (
     <>

@@ -7,7 +7,7 @@ import { PatientCard } from '../../components/pacientes/PatientCard'
 import { PatientForm } from '../../components/pacientes/PatientForm'
 import { useAuth } from '../../auth/AuthContext'
 import { listPacientes, ApiError, type PacienteResumo } from '../../lib/api'
-import { listFichas } from '../../lib/fichasStore'
+import { listAtendimentos } from '../../lib/atendimentosStore'
 import { obterIniciais, calcularIdadeAnos } from '../../lib/pacienteFormat'
 import { toastError } from '../../lib/toast'
 
@@ -25,7 +25,7 @@ export function PacientesPage({ searchTerm = '', onCountChange }: PacientesPageP
   const [incluirInativos, setIncluirInativos] = useState(false)
 
   const [pacientes, setPacientes] = useState<PacienteResumo[]>([])
-  const [fichasPorPaciente, setFichasPorPaciente] = useState<Record<number, number>>({})
+  const [atendimentosPorPaciente, setAtendimentosPorPaciente] = useState<Record<number, number>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -53,16 +53,16 @@ export function PacientesPage({ searchTerm = '', onCountChange }: PacientesPageP
 
   useEffect(() => {
     if (!accessToken) return
-    listFichas(accessToken)
-      .then((fichas) => {
-        const contagens = fichas.reduce<Record<number, number>>((acc, ficha) => {
-          acc[ficha.pacienteId] = (acc[ficha.pacienteId] ?? 0) + 1
+    listAtendimentos(accessToken)
+      .then((atendimentos) => {
+        const contagens = atendimentos.reduce<Record<number, number>>((acc, atendimento) => {
+          acc[atendimento.pacienteId] = (acc[atendimento.pacienteId] ?? 0) + 1
           return acc
         }, {})
-        setFichasPorPaciente(contagens)
+        setAtendimentosPorPaciente(contagens)
       })
       .catch((err) => {
-        toastError(err instanceof Error ? err.message : 'Não foi possível carregar a contagem de fichas.')
+        toastError(err instanceof Error ? err.message : 'Não foi possível carregar a contagem de atendimentos.')
       })
   }, [accessToken])
   return (
@@ -120,7 +120,7 @@ export function PacientesPage({ searchTerm = '', onCountChange }: PacientesPageP
               key={paciente.id}
               nome={paciente.nome}
               idade={calcularIdadeAnos(paciente.dataNascimento)}
-              fichas={fichasPorPaciente[paciente.id] ?? 0}
+              atendimentos={atendimentosPorPaciente[paciente.id] ?? 0}
               iniciais={obterIniciais(paciente.nome)}
               avatarColor={AVATAR_COLORS[paciente.id % AVATAR_COLORS.length]}
               fotoUrl={paciente.fotoUrl}

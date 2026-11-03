@@ -145,7 +145,7 @@ export function PerfilPage() {
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
               <div className="text-tm-md font-semibold text-tm-fg">Ativar notificações</div>
-              <div className="text-tm-sm text-tm-fg-muted">Receba alertas sobre fichas e agendamentos.</div>
+              <div className="text-tm-sm text-tm-fg-muted">Receba alertas sobre atendimentos e agendamentos.</div>
             </div>
             <Switch checked={notificacoesAtivas} onChange={setNotificacoesAtivas} label="Ativar notificações" />
           </div>

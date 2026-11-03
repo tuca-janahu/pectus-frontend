@@ -1,7 +1,7 @@
 export { Avatar } from './Avatar'
 export type { AvatarColor, AvatarProps } from './Avatar'
 export { StatusBadge } from './StatusBadge'
-export type { FichaStatus, StatusBadgeProps } from './StatusBadge'
+export type { AtendimentoStatus, StatusBadgeProps } from './StatusBadge'
 export { Button } from './Button'
 export type { ButtonProps, ButtonSize, ButtonVariant } from './Button'
 export { IconButton } from './IconButton'

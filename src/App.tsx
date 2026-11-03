@@ -15,14 +15,22 @@ import { RequireAuth } from './auth/RequireAuth'
 import { useAuth } from './auth/AuthContext'
 import { PacientesPage } from './pages/pacientes/PacientesPage'
 import { PacienteDetailsPage } from './pages/pacientes/PacienteDetailsPage'
-import { FichasPage } from './pages/FichasPage'
+import { AtendimentosPage } from './pages/AtendimentosPage'
 import { CalendarioPage } from './pages/CalendarioPage'
 import { IconSearch, IconFilter } from './components/icons'
 
 function routeIdFromPathname(pathname: string): RouteId {
   if (matchPath('/pacientes/:id', pathname)) return 'busca'
-  if (pathname === '/fichas' || pathname.startsWith('/fichas/')) return 'fichas'
+  if (pathname === '/atendimentos' || pathname.startsWith('/atendimentos/')) return 'atendimentos'
   return TM_NAV_ITEMS.find((item) => item.path === pathname)?.id ?? 'home'
+}
+
+function RedirecionarFichasAntigas() {
+  const location = useLocation()
+  const destino = /^\/fichas\/nova(?:\/(?:agendamento|atendimento))?$/.test(location.pathname)
+    ? '/atendimentos/novo'
+    : location.pathname.replace(/^\/fichas/, '/atendimentos')
+  return <Navigate to={`${destino}${location.search}`} replace />
 }
 
 function AuthenticatedApp() {
@@ -32,13 +40,13 @@ function AuthenticatedApp() {
   const [notifications, setNotifications] = useState(TM_NOTIFICATIONS)
   const [searchTerm, setSearchTerm] = useState('')
   const [pacientesCount, setPacientesCount] = useState<number | null>(null)
-  const [fichasCount, setFichasCount] = useState<number | null>(null)
+  const [atendimentosCount, setAtendimentosCount] = useState<number | null>(null)
 
   const isDetailsRoute = Boolean(matchPath('/pacientes/:id', location.pathname))
   const route = routeIdFromPathname(location.pathname)
   const activeItem = TM_NAV_ITEMS.find((item) => item.id === route) ?? TM_NAV_ITEMS[0]
   const isPacientesRoute = route === 'busca' && !isDetailsRoute
-  const isFichasRoute = route === 'fichas'
+  const isAtendimentosRoute = route === 'atendimentos'
 
   return (
     <AppShell
@@ -59,9 +67,9 @@ function AuthenticatedApp() {
             ? pacientesCount !== null
               ? `${pacientesCount} ${pacientesCount === 1 ? 'cadastrado' : 'cadastrados'}`
               : 'Carregando...'
-            : isFichasRoute
-              ? fichasCount !== null
-                ? `${fichasCount} ${fichasCount === 1 ? 'ficha registrada' : 'fichas registradas'}`
+            : isAtendimentosRoute
+              ? atendimentosCount !== null
+                ? `${atendimentosCount} ${atendimentosCount === 1 ? 'atendimento registrado' : 'atendimentos registrados'}`
                 : 'Carregando...'
               : activeItem.subtitle
       }
@@ -92,10 +100,11 @@ function AuthenticatedApp() {
       }
     >
       <Routes>
+        <Route path="/fichas/*" element={<RedirecionarFichasAntigas />} />
         {TM_NAV_ITEMS.map((item) => (
           <Route
             key={item.id}
-            path={item.id === 'fichas' ? '/fichas/*' : item.path}
+            path={item.id === 'atendimentos' ? '/atendimentos/*' : item.path}
             element={
               item.id === 'home' ? (
                 <HomePage />
@@ -106,8 +115,8 @@ function AuthenticatedApp() {
                   searchTerm={searchTerm}
                   onCountChange={setPacientesCount}
                 />
-              ) : item.id === 'fichas' ? (
-                <FichasPage onCountChange={setFichasCount} />
+              ) : item.id === 'atendimentos' ? (
+                <AtendimentosPage onCountChange={setAtendimentosCount} />
               ) : item.id === 'calendario' ? (
                 <CalendarioPage />
               ) : item.id === 'logs' ? (

@@ -107,7 +107,7 @@
   --tm-error-border: oklch(0.65 0.16 25);
   --tm-focus-ring: color-mix(in oklch, var(--tm-primary) 16%, transparent);
 
-  /* --- Badge de contagem (sino de notificações, dias com fichas no calendário) --- */
+  /* --- Badge de contagem (sino de notificações, dias com atendimentos no calendário) --- */
   --tm-badge-count-bg: oklch(0.65 0.18 25);
 }
 

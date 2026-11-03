@@ -4,7 +4,7 @@ import { IconChevronRight } from '../icons'
 interface PatientCardProps {
   nome: string
   idade: number
-  fichas: number
+  atendimentos: number
   iniciais: string
   avatarColor?: AvatarColor
   fotoUrl?: string | null
@@ -14,7 +14,7 @@ interface PatientCardProps {
 export function PatientCard({
   nome,
   idade,
-  fichas,
+  atendimentos,
   iniciais,
   avatarColor = 'sky',
   fotoUrl,
@@ -39,7 +39,7 @@ export function PatientCard({
         <div>
           <h3 className="font-tm-body text-tm-base font-semibold text-tm-fg">{nome}</h3>
           <p className="font-tm-body text-tm-sm text-tm-fg-muted">
-            {idade} anos • {fichas} {fichas === 1 ? 'atendimento' : 'atendimentos'}
+            {idade} anos • {atendimentos} {atendimentos === 1 ? 'atendimento' : 'atendimentos'}
           </p>
         </div>
       </div>

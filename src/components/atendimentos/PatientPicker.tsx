@@ -27,9 +27,9 @@ interface PatientPickerProps {
   onPatientsChange?: (pacientes: PacienteResumo[]) => void
 }
 
-// Seletor de paciente reutilizado pelos fluxos de ficha. Caso o paciente não
+// Seletor de paciente reutilizado pelos fluxos de atendimento. Caso o paciente não
 // exista ainda, "Cadastrar novo" renderiza o mesmo PatientForm da tela de
-// Pacientes — sem duplicar o formulário nem perder o progresso da ficha.
+// Pacientes — sem duplicar o formulário nem perder o progresso do atendimento.
 export function PatientPicker({ value, onChange, error, disabled, onPatientsChange }: PatientPickerProps) {
   const { accessToken } = useAuth()
   const [pacientes, setPacientes] = useState<PacienteResumo[]>([])

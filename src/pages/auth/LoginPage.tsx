@@ -97,7 +97,7 @@ export function LoginPage() {
   }
 
   return (
-    <AuthShell title="Entre na sua conta" subtitle="Acesse seu painel de fichas epicríticas">
+    <AuthShell title="Entre na sua conta" subtitle="Acesse seus atendimentos e a agenda clínica">
       <form onSubmit={submit} className="flex flex-col gap-4">
         {formError && (
           <div className="rounded-lg border border-red-200 bg-red-50 p-2.5 text-center text-sm text-red-600">

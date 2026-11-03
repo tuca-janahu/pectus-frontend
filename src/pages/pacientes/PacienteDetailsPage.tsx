@@ -18,10 +18,10 @@ import { getPaciente, uploadPacienteFoto, type PacienteResumo, ApiError } from '
 import { obterIniciais, calcularIdadeAnos } from '../../lib/pacienteFormat'
 import { toastError, toastSuccess } from '../../lib/toast'
 import { PatientForm } from '../../components/pacientes/PatientForm'
-import { FichaCard } from '../../components/fichas/FichaCard'
+import { AtendimentoCard } from '../../components/atendimentos/AtendimentoCard'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
-import { AtendimentoDetalhes } from '../../components/fichas/AtendimentoDetalhes'
-import { deleteFicha, getFichaPaciente, iniciarAtendimento, listAtendimentosPaciente, type Ficha, type FichaLongitudinal } from '../../lib/fichasStore'
+import { AtendimentoDetalhes } from '../../components/atendimentos/AtendimentoDetalhes'
+import { cancelarAtendimento, getFichaPaciente, iniciarAtendimento, listAtendimentosPaciente, type Atendimento, type FichaLongitudinal } from '../../lib/atendimentosStore'
 
 const AVATAR_COLORS: AvatarColor[] = ['sky', 'teal', 'violet', 'rose', 'amber']
 const FOTO_MIME_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp']
@@ -79,12 +79,12 @@ export function PacienteDetailsPage() {
   const { accessToken, user } = useAuth()
 
   const [paciente, setPaciente] = useState<PacienteResumo | null>(null)
-  const [fichas, setFichas] = useState<Ficha[]>([])
+  const [atendimentos, setAtendimentos] = useState<Atendimento[]>([])
   const [fichaLongitudinal, setFichaLongitudinal] = useState<FichaLongitudinal | null>(null)
   const [loading, setLoading] = useState(true)
-  const [loadingFichas, setLoadingFichas] = useState(true)
+  const [loadingAtendimentos, setLoadingAtendimentos] = useState(true)
   const [startingId, setStartingId] = useState<number | null>(null)
-  const [cancelTarget, setCancelTarget] = useState<Ficha | null>(null)
+  const [cancelTarget, setCancelTarget] = useState<Atendimento | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [uploadingFoto, setUploadingFoto] = useState(false)
   const [fotoPreview, setFotoPreview] = useState<string | null>(null)
@@ -133,64 +133,64 @@ export function PacienteDetailsPage() {
     }
   }, [accessToken, id])
 
-  const carregarFichas = useCallback(async () => {
+  const carregarAtendimentos = useCallback(async () => {
     if (!accessToken || !id) return
-    setLoadingFichas(true)
+    setLoadingAtendimentos(true)
     try {
       const [lista, clinica] = await Promise.all([
         listAtendimentosPaciente(accessToken, Number(id)),
         getFichaPaciente(accessToken, Number(id)),
       ])
       setFichaLongitudinal(clinica)
-      setFichas(
+      setAtendimentos(
         lista
           .sort((a, b) => `${b.data}T${b.hora}`.localeCompare(`${a.data}T${a.hora}`)),
       )
     } catch (err) {
-      toastError(err instanceof Error ? err.message : 'Não foi possível carregar as fichas do paciente.')
+      toastError(err instanceof Error ? err.message : 'Não foi possível carregar os atendimentos do paciente.')
     } finally {
-      setLoadingFichas(false)
+      setLoadingAtendimentos(false)
     }
   }, [accessToken, id])
 
   useEffect(() => {
     carregarPaciente()
-    carregarFichas()
-  }, [carregarPaciente, carregarFichas])
+    carregarAtendimentos()
+  }, [carregarPaciente, carregarAtendimentos])
 
-  const abrirNovaFicha = () => {
+  const abrirNovoAtendimento = () => {
     const pacienteId = paciente?.id ?? Number(id)
     const retorno = `/pacientes/${pacienteId}`
-    navigate(`/fichas/nova?pacienteId=${pacienteId}&retorno=${encodeURIComponent(retorno)}`)
+    navigate(`/atendimentos/novo?pacienteId=${pacienteId}&retorno=${encodeURIComponent(retorno)}`)
   }
 
-  const editarFicha = (ficha: Ficha) => {
+  const editarAtendimento = (atendimento: Atendimento) => {
     const retorno = `/pacientes/${paciente?.id ?? id}`
-    navigate(`/fichas/${ficha.id}/editar?retorno=${encodeURIComponent(retorno)}`)
+    navigate(`/atendimentos/${atendimento.id}/editar?retorno=${encodeURIComponent(retorno)}`)
   }
 
-  const iniciarFicha = async (ficha: Ficha) => {
+  const iniciarAtendimentoSelecionado = async (atendimento: Atendimento) => {
     if (!accessToken || startingId !== null) return
-    setStartingId(ficha.id)
+    setStartingId(atendimento.id)
     try {
-      await iniciarAtendimento(accessToken, ficha.id)
+      await iniciarAtendimento(accessToken, atendimento.id)
       toastSuccess('Atendimento iniciado. Preencha a ficha clínica.')
-      editarFicha(ficha)
+      editarAtendimento(atendimento)
     } catch (error) {
       toastError(error instanceof Error ? error.message : 'Não foi possível iniciar o atendimento.')
-      await carregarFichas()
+      await carregarAtendimentos()
     } finally {
       setStartingId(null)
     }
   }
 
-  const cancelarFicha = async () => {
+  const cancelarAtendimentoSelecionado = async () => {
     if (!accessToken || !cancelTarget) return
     try {
-      await deleteFicha(accessToken, cancelTarget.id)
+      await cancelarAtendimento(accessToken, cancelTarget.id)
       setCancelTarget(null)
       toastSuccess('Atendimento cancelado.')
-      await carregarFichas()
+      await carregarAtendimentos()
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Não foi possível cancelar o atendimento.')
     }
@@ -397,34 +397,34 @@ export function PacienteDetailsPage() {
                 <IconActivity size={20} className="text-tm-primary" />
                 <h3 className="text-tm-base font-semibold text-tm-fg">Histórico de atendimentos</h3>
               </div>
-              <Button size="sm" icon={<IconPlus size={16} />} onClick={abrirNovaFicha} disabled={fichaLongitudinal?.motivoEncerramento === 'OBITO'}>
+              <Button size="sm" icon={<IconPlus size={16} />} onClick={abrirNovoAtendimento} disabled={fichaLongitudinal?.motivoEncerramento === 'OBITO'}>
                 Novo atendimento
               </Button>
             </div>
-            {loadingFichas ? (
+            {loadingAtendimentos ? (
               <p className="text-tm-sm text-tm-fg-muted">Carregando atendimentos...</p>
-            ) : fichas.length === 0 ? (
+            ) : atendimentos.length === 0 ? (
               <p className="text-tm-sm text-tm-fg-muted">Nenhum atendimento registrado até o momento.</p>
             ) : (
               <div className="flex flex-col gap-3">
-                {fichas.map((ficha) => (
-                  <div key={ficha.id} className="flex flex-col gap-1.5">
+                {atendimentos.map((atendimento) => (
+                  <div key={atendimento.id} className="flex flex-col gap-1.5">
                     <span className="text-tm-xs font-semibold uppercase tracking-wide text-tm-fg-subtle">
-                      {formatarData(`${ficha.data}T00:00:00`)}
+                      {formatarData(`${atendimento.data}T00:00:00`)}
                     </span>
-                    <FichaCard
-                      ficha={ficha}
+                    <AtendimentoCard
+                      atendimento={atendimento}
                       pacienteNome={paciente.nome}
                       iniciais={obterIniciais(paciente.nome)}
                       avatarColor={avatarColor}
                       fotoUrl={imagemSrc}
-                      onClick={(ficha.status === 'concluida' && user?.roles.includes('MEDICO')) || ((ficha.status === 'agendada' || ficha.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === ficha.medicoId)) ? () => editarFicha(ficha) : undefined}
-                      onEdit={(ficha.status === 'concluida' && user?.roles.includes('MEDICO')) || ((ficha.status === 'agendada' || ficha.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === ficha.medicoId)) ? () => editarFicha(ficha) : undefined}
-                      onDelete={(ficha.status === 'agendada' || ficha.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === ficha.medicoId) ? () => setCancelTarget(ficha) : undefined}
-                      onStart={ficha.status === 'agendada' && user?.roles.includes('MEDICO') && user.medico?.id === ficha.medicoId ? () => iniciarFicha(ficha) : undefined}
-                      starting={startingId === ficha.id}
+                      onClick={(atendimento.status === 'concluida' && user?.roles.includes('MEDICO')) || ((atendimento.status === 'agendada' || atendimento.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === atendimento.medicoId)) ? () => editarAtendimento(atendimento) : undefined}
+                      onEdit={(atendimento.status === 'concluida' && user?.roles.includes('MEDICO')) || ((atendimento.status === 'agendada' || atendimento.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === atendimento.medicoId)) ? () => editarAtendimento(atendimento) : undefined}
+                      onDelete={(atendimento.status === 'agendada' || atendimento.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === atendimento.medicoId) ? () => setCancelTarget(atendimento) : undefined}
+                      onStart={atendimento.status === 'agendada' && user?.roles.includes('MEDICO') && user.medico?.id === atendimento.medicoId ? () => iniciarAtendimentoSelecionado(atendimento) : undefined}
+                      starting={startingId === atendimento.id}
                     />
-                    <AtendimentoDetalhes ficha={ficha} />
+                    <AtendimentoDetalhes atendimento={atendimento} />
                   </div>
                 ))}
               </div>
@@ -434,7 +434,7 @@ export function PacienteDetailsPage() {
       </div>
       <ConfirmDialog open={!!cancelTarget} title="Cancelar atendimento?"
         description="O cancelamento é definitivo. Para atender o paciente depois, será necessário criar outro agendamento."
-        confirmLabel="Cancelar atendimento" onCancel={() => setCancelTarget(null)} onConfirm={cancelarFicha} />
+        confirmLabel="Cancelar atendimento" onCancel={() => setCancelTarget(null)} onConfirm={cancelarAtendimentoSelecionado} />
     </div>
   )
 }

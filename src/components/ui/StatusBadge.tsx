@@ -1,6 +1,6 @@
-export type FichaStatus = 'agendada' | 'concluida' | 'cancelada' | 'pendente'
+export type AtendimentoStatus = 'agendada' | 'concluida' | 'cancelada' | 'pendente'
 
-const STATUS_MAP: Record<FichaStatus, { label: string; classes: string; dotClass: string }> = {
+const STATUS_MAP: Record<AtendimentoStatus, { label: string; classes: string; dotClass: string }> = {
   agendada: {
     label: 'Agendado',
     classes: 'bg-tm-status-agendada-bg text-tm-status-agendada-fg',
@@ -24,7 +24,7 @@ const STATUS_MAP: Record<FichaStatus, { label: string; classes: string; dotClass
 }
 
 export interface StatusBadgeProps {
-  status: FichaStatus
+  status: AtendimentoStatus
 }
 
 export function StatusBadge({ status }: StatusBadgeProps) {

@@ -1,10 +1,10 @@
 import { Avatar, Button, IconButton, StatusBadge } from '../ui'
 import type { AvatarColor } from '../ui'
 import { IconEdit, IconStethoscope, IconTrash } from '../icons'
-import type { Ficha } from '../../lib/fichasStore'
+import type { Atendimento } from '../../lib/atendimentosStore'
 
-interface FichaCardProps {
-  ficha: Ficha
+interface AtendimentoCardProps {
+  atendimento: Atendimento
   pacienteNome?: string
   iniciais?: string
   avatarColor?: AvatarColor
@@ -16,8 +16,8 @@ interface FichaCardProps {
   starting?: boolean
 }
 
-export function FichaCard({
-  ficha,
+export function AtendimentoCard({
+  atendimento,
   pacienteNome,
   iniciais,
   avatarColor = 'sky',
@@ -27,7 +27,7 @@ export function FichaCard({
   onDelete,
   onStart,
   starting = false,
-}: FichaCardProps) {
+}: AtendimentoCardProps) {
   return (
     <div
       onClick={onClick}
@@ -37,7 +37,7 @@ export function FichaCard({
       style={{ cursor: onClick ? 'pointer' : 'default' }}
     >
       <div className="flex min-w-14 flex-col items-center justify-center gap-0.5 border-r border-tm-border px-2">
-        <div className="text-tm-2xl font-bold tracking-[-0.02em] text-tm-fg">{ficha.hora}</div>
+        <div className="text-tm-2xl font-bold tracking-[-0.02em] text-tm-fg">{atendimento.hora}</div>
         <div className="text-tm-2xs font-semibold uppercase tracking-wider text-tm-fg-subtle">hrs</div>
       </div>
 
@@ -46,11 +46,11 @@ export function FichaCard({
         <div className="min-w-0 flex-1">
           <div className="mb-0.5 flex flex-wrap items-center gap-2">
             <div className="text-tm-lg font-semibold tracking-[-0.005em] text-tm-fg">{pacienteNome}</div>
-            <StatusBadge status={ficha.status} />
+            <StatusBadge status={atendimento.status} />
           </div>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-tm-base text-tm-fg-muted">
-            <span className="font-medium">{ficha.procedimento}{ficha.procedimentoOutro ? ` — ${ficha.procedimentoOutro}` : ''}</span>
-            {ficha.descricao && <span className="min-w-0 truncate" title={ficha.descricao}>· {ficha.descricao}</span>}
+            <span className="font-medium">{atendimento.procedimento}{atendimento.procedimentoOutro ? ` — ${atendimento.procedimentoOutro}` : ''}</span>
+            {atendimento.descricao && <span className="min-w-0 truncate" title={atendimento.descricao}>· {atendimento.descricao}</span>}
           </div>
         </div>
       </div>

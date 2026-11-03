@@ -25,7 +25,7 @@ export function AuthShell({ children, title, subtitle }: { children: ReactNode; 
         </div>
         <div className="max-w-[480px]">
           <div className="mb-4 text-[clamp(32px,4vw,44px)] font-bold leading-[1.05] tracking-[-0.03em]">
-            Fichas epicríticas, organizadas como você pensa.
+            Atendimentos e histórico clínico em um só lugar.
           </div>
           <div className="text-[15px] leading-[1.55] opacity-85">
             Calendário cirúrgico, prontuário compacto e busca rápida — em uma só tela. Pensado para a rotina do
@@ -35,7 +35,7 @@ export function AuthShell({ children, title, subtitle }: { children: ReactNode; 
         <div className="flex gap-8 opacity-85">
           <div>
             <div className="text-[26px] font-bold tracking-[-0.02em]">2.4k+</div>
-            <div className="text-[12px] opacity-80">Fichas epicríticas</div>
+            <div className="text-[12px] opacity-80">Atendimentos clínicos</div>
           </div>
           <div>
             <div className="text-[26px] font-bold tracking-[-0.02em]">180</div>

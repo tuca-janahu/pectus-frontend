@@ -11,8 +11,8 @@ const FOTO_MIME_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp']
 const FOTO_MAX_BYTES = 8 * 1024 * 1024
 
 // Estado + lógica de submit do formulário de paciente, extraído de PatientForm
-// para ser reutilizado também dentro do formulário de ficha (criar paciente e
-// ficha em um único botão, sem duplicar a lógica de cadastro).
+// para ser reutilizado também dentro do formulário de atendimento (criar paciente e
+// atendimento em um único botão, sem duplicar a lógica de cadastro).
 export function usePatientForm(paciente?: PacienteResumo) {
   const { accessToken } = useAuth()
   const isEditing = !!paciente

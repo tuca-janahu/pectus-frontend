@@ -1,5 +1,5 @@
 import { Input, Select } from '../ui'
-import type { FichaClinicalValues } from '../../lib/fichasStore'
+import type { FichaClinicalValues } from '../../lib/atendimentosStore'
 
 interface FichaClinicalFieldsProps {
   value: FichaClinicalValues

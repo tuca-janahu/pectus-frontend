@@ -11,7 +11,7 @@ import {
   IconPlus,
 } from '../components/icons'
 import { Button, Card, EmptyState, type AvatarColor } from '../components/ui'
-import { FichaCard } from '../components/fichas/FichaCard'
+import { AtendimentoCard } from '../components/atendimentos/AtendimentoCard'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import {
   ApiError,
@@ -21,7 +21,7 @@ import {
   type AuthUser,
   type PacienteResumo,
 } from '../lib/api'
-import { deleteFicha, iniciarAtendimento, listFichas, type Ficha } from '../lib/fichasStore'
+import { cancelarAtendimento, iniciarAtendimento, listAtendimentos, type Atendimento } from '../lib/atendimentosStore'
 import { toastError, toastSuccess } from '../lib/toast'
 
 const AVATAR_COLORS: AvatarColor[] = ['sky', 'teal', 'violet', 'rose', 'amber']
@@ -74,11 +74,11 @@ function obterIniciais(nome: string): string {
   return '?'
 }
 
-function filtrarFichasUsuario(fichas: Ficha[], user: AuthUser): Ficha[] {
+function filtrarAtendimentosUsuario(atendimentos: Atendimento[], user: AuthUser): Atendimento[] {
   if (user.roles.includes('MEDICO') && user.medico) {
-    return fichas.filter((f) => f.medicoId === user.medico?.id)
+    return atendimentos.filter((f) => f.medicoId === user.medico?.id)
   }
-  return fichas
+  return atendimentos
 }
 
 interface DiaGrade {
@@ -86,10 +86,10 @@ interface DiaGrade {
   diaNumero: number
   mesAtual: boolean
   isHoje: boolean
-  fichas: Ficha[]
+  atendimentos: Atendimento[]
 }
 
-function gerarDiasDoMes(ano: number, mes: number, fichas: Ficha[], hojeStr: string): DiaGrade[] {
+function gerarDiasDoMes(ano: number, mes: number, atendimentos: Atendimento[], hojeStr: string): DiaGrade[] {
   const primeiroDia = new Date(ano, mes, 1)
   const ultimoDia = new Date(ano, mes + 1, 0)
   const dias: DiaGrade[] = []
@@ -106,7 +106,7 @@ function gerarDiasDoMes(ano: number, mes: number, fichas: Ficha[], hojeStr: stri
       diaNumero: diaNum,
       mesAtual: false,
       isHoje: iso === hojeStr,
-      fichas: fichas.filter((f) => f.data === iso),
+      atendimentos: atendimentos.filter((f) => f.data === iso),
     })
   }
 
@@ -118,7 +118,7 @@ function gerarDiasDoMes(ano: number, mes: number, fichas: Ficha[], hojeStr: stri
       diaNumero: dia,
       mesAtual: true,
       isHoje: iso === hojeStr,
-      fichas: fichas.filter((f) => f.data === iso),
+      atendimentos: atendimentos.filter((f) => f.data === iso),
     })
   }
 
@@ -132,7 +132,7 @@ function gerarDiasDoMes(ano: number, mes: number, fichas: Ficha[], hojeStr: stri
       diaNumero: dia,
       mesAtual: false,
       isHoje: iso === hojeStr,
-      fichas: fichas.filter((f) => f.data === iso),
+      atendimentos: atendimentos.filter((f) => f.data === iso),
     })
   }
 
@@ -148,12 +148,12 @@ export function CalendarioPage() {
   const [verificandoStatus, setVerificandoStatus] = useState(true)
   const [conectando, setConectando] = useState(false)
 
-  // Fichas e pacientes da API
-  const [fichas, setFichas] = useState<Ficha[]>([])
+  // Atendimentos e pacientes da API
+  const [atendimentos, setAtendimentos] = useState<Atendimento[]>([])
   const [pacientes, setPacientes] = useState<PacienteResumo[]>([])
   const [loadingAgenda, setLoadingAgenda] = useState(true)
   const [startingId, setStartingId] = useState<number | null>(null)
-  const [cancelTarget, setCancelTarget] = useState<Ficha | null>(null)
+  const [cancelTarget, setCancelTarget] = useState<Atendimento | null>(null)
 
   // Mês, ano e seleção
   const hoje = hojeISO()
@@ -238,11 +238,11 @@ export function CalendarioPage() {
     if (!accessToken) return
     setLoadingAgenda(true)
     try {
-      const [fichasRes, pacientesRes] = await Promise.all([
-        listFichas(accessToken),
+      const [atendimentosRes, pacientesRes] = await Promise.all([
+        listAtendimentos(accessToken),
         listPacientes(accessToken, undefined, true),
       ])
-      setFichas(fichasRes)
+      setAtendimentos(atendimentosRes)
       setPacientes(pacientesRes.pacientes)
     } catch {
       // falhas tratadas graciosamente
@@ -288,17 +288,17 @@ export function CalendarioPage() {
     setSeletorAberto(false)
   }
 
-  const handleEdit = (ficha: Ficha) => {
-    navigate(`/fichas/${ficha.id}/editar?retorno=/calendario`)
+  const handleEdit = (atendimento: Atendimento) => {
+    navigate(`/atendimentos/${atendimento.id}/editar?retorno=/calendario`)
   }
 
-  const handleStart = async (ficha: Ficha) => {
+  const handleStart = async (atendimento: Atendimento) => {
     if (!accessToken || startingId !== null) return
-    setStartingId(ficha.id)
+    setStartingId(atendimento.id)
     try {
-      await iniciarAtendimento(accessToken, ficha.id)
+      await iniciarAtendimento(accessToken, atendimento.id)
       toastSuccess('Atendimento iniciado. Preencha a ficha clínica.')
-      handleEdit(ficha)
+      handleEdit(atendimento)
     } catch (error) {
       toastError(error instanceof Error ? error.message : 'Não foi possível iniciar o atendimento.')
       await carregarDados()
@@ -311,7 +311,7 @@ export function CalendarioPage() {
     if (!cancelTarget) return
     try {
       if (!accessToken) return
-      await deleteFicha(accessToken, cancelTarget.id)
+      await cancelarAtendimento(accessToken, cancelTarget.id)
       setCancelTarget(null)
       toastSuccess('Atendimento cancelado com sucesso.')
       await carregarDados()
@@ -320,26 +320,26 @@ export function CalendarioPage() {
     }
   }
 
-  const fichasFiltradas = useMemo(() => {
-    return user ? filtrarFichasUsuario(fichas, user) : []
-  }, [fichas, user])
+  const atendimentosFiltrados = useMemo(() => {
+    return user ? filtrarAtendimentosUsuario(atendimentos, user) : []
+  }, [atendimentos, user])
 
   const diasGrade = useMemo(() => {
-    return gerarDiasDoMes(anoAtual, mesAtual, fichasFiltradas, hoje)
-  }, [anoAtual, mesAtual, fichasFiltradas, hoje])
+    return gerarDiasDoMes(anoAtual, mesAtual, atendimentosFiltrados, hoje)
+  }, [anoAtual, mesAtual, atendimentosFiltrados, hoje])
 
-  // Fichas do dia selecionado
-  const fichasDoDiaSelecionado = useMemo(() => {
-    return fichasFiltradas
+  // Atendimentos do dia selecionado
+  const atendimentosDoDiaSelecionado = useMemo(() => {
+    return atendimentosFiltrados
       .filter((f) => f.data === diaSelecionado)
       .sort((a, b) => a.hora.localeCompare(b.hora))
-  }, [fichasFiltradas, diaSelecionado])
+  }, [atendimentosFiltrados, diaSelecionado])
 
-  const totalFichasDia = fichasDoDiaSelecionado.length
-  const textoTotalFichas =
-    totalFichasDia === 0
+  const totalAtendimentosDia = atendimentosDoDiaSelecionado.length
+  const textoTotalAtendimentos =
+    totalAtendimentosDia === 0
       ? 'Nenhum atendimento neste dia'
-      : `${totalFichasDia} ${totalFichasDia === 1 ? 'atendimento' : 'atendimentos'} neste dia`
+      : `${totalAtendimentosDia} ${totalAtendimentosDia === 1 ? 'atendimento' : 'atendimentos'} neste dia`
 
   return (
     <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-6 text-tm-fg">
@@ -499,7 +499,7 @@ export function CalendarioPage() {
           <div className="grid grid-cols-7 gap-px bg-tm-border">
             {diasGrade.map((dia) => {
               const isSelecionado = dia.dataISO === diaSelecionado
-              const quantidadeConsultas = dia.fichas.length
+              const quantidadeConsultas = dia.atendimentos.length
 
               return (
                 <div
@@ -554,13 +554,13 @@ export function CalendarioPage() {
 
       {/* 4. BARRA DE RESUMO DO DIA SELECIONADO */}
       <div className="flex flex-col gap-3 rounded-tm-card border border-tm-border bg-tm-surface p-4 sm:flex-row sm:items-center sm:justify-between shadow-tm-card">
-        {/* À Esquerda: Data completa e total de fichas */}
+        {/* À Esquerda: Data completa e total de atendimentos */}
         <div>
           <h3 className="text-tm-lg font-bold tracking-[-0.01em] text-tm-fg">
             {formatarDataResumo(diaSelecionado)}
           </h3>
           <p className="mt-0.5 text-tm-sm text-tm-fg-muted font-medium">
-            {textoTotalFichas}
+            {textoTotalAtendimentos}
           </p>
         </div>
 
@@ -573,7 +573,7 @@ export function CalendarioPage() {
             variant="primary"
             size="sm"
             icon={<IconPlus size={16} />}
-            onClick={() => navigate(`/fichas/nova?data=${diaSelecionado}`)}
+            onClick={() => navigate(`/atendimentos/novo?data=${diaSelecionado}`)}
           >
             Novo Agendamento
           </Button>
@@ -588,7 +588,7 @@ export function CalendarioPage() {
               Carregando agendamentos...
             </div>
           </Card>
-        ) : fichasDoDiaSelecionado.length === 0 ? (
+        ) : atendimentosDoDiaSelecionado.length === 0 ? (
           <Card padded>
             <EmptyState
               icon={<IconCalendar size={28} />}
@@ -598,7 +598,7 @@ export function CalendarioPage() {
                 <Button
                   size="sm"
                   icon={<IconPlus size={16} />}
-                  onClick={() => navigate(`/fichas/nova?data=${diaSelecionado}`)}
+                  onClick={() => navigate(`/atendimentos/novo?data=${diaSelecionado}`)}
                 >
                   Agendar paciente
                 </Button>
@@ -606,21 +606,21 @@ export function CalendarioPage() {
             />
           </Card>
         ) : (
-          fichasDoDiaSelecionado.map((ficha) => {
-            const paciente = pacientes.find((p) => p.id === ficha.pacienteId)
+          atendimentosDoDiaSelecionado.map((atendimento) => {
+            const paciente = pacientes.find((p) => p.id === atendimento.pacienteId)
             return (
-              <FichaCard
-                key={ficha.id}
-                ficha={ficha}
-                pacienteNome={paciente?.nome ?? `Paciente #${ficha.pacienteId}`}
+              <AtendimentoCard
+                key={atendimento.id}
+                atendimento={atendimento}
+                pacienteNome={paciente?.nome ?? `Paciente #${atendimento.pacienteId}`}
                 iniciais={paciente ? obterIniciais(paciente.nome) : '?'}
-                avatarColor={AVATAR_COLORS[ficha.pacienteId % AVATAR_COLORS.length]}
+                avatarColor={AVATAR_COLORS[atendimento.pacienteId % AVATAR_COLORS.length]}
                 fotoUrl={paciente?.fotoUrl}
-                onClick={(ficha.status === 'concluida' && user?.roles.includes('MEDICO')) || ((ficha.status === 'agendada' || ficha.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === ficha.medicoId)) ? () => handleEdit(ficha) : undefined}
-                onEdit={(ficha.status === 'concluida' && user?.roles.includes('MEDICO')) || ((ficha.status === 'agendada' || ficha.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === ficha.medicoId)) ? () => handleEdit(ficha) : undefined}
-                onDelete={(ficha.status === 'agendada' || ficha.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === ficha.medicoId) ? () => setCancelTarget(ficha) : undefined}
-                onStart={ficha.status === 'agendada' && user?.roles.includes('MEDICO') && user.medico?.id === ficha.medicoId ? () => handleStart(ficha) : undefined}
-                starting={startingId === ficha.id}
+                onClick={(atendimento.status === 'concluida' && user?.roles.includes('MEDICO')) || ((atendimento.status === 'agendada' || atendimento.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === atendimento.medicoId)) ? () => handleEdit(atendimento) : undefined}
+                onEdit={(atendimento.status === 'concluida' && user?.roles.includes('MEDICO')) || ((atendimento.status === 'agendada' || atendimento.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === atendimento.medicoId)) ? () => handleEdit(atendimento) : undefined}
+                onDelete={(atendimento.status === 'agendada' || atendimento.status === 'pendente') && (user?.roles.includes('ADMIN') || user?.medico?.id === atendimento.medicoId) ? () => setCancelTarget(atendimento) : undefined}
+                onStart={atendimento.status === 'agendada' && user?.roles.includes('MEDICO') && user.medico?.id === atendimento.medicoId ? () => handleStart(atendimento) : undefined}
+                starting={startingId === atendimento.id}
               />
             )
           })
