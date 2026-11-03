@@ -322,7 +322,8 @@ export function FichaForm({ ficha, pacienteIdInicial, dataInicial, onCancel, onS
               options={[{ value: 'EM_TRATAMENTO', label: 'Em tratamento' }, { value: 'FORA_DE_TRATAMENTO', label: 'Fora de tratamento' }]} disabled={loading} />
             {situacao === 'FORA_DE_TRATAMENTO' && <div className="grid gap-3 sm:grid-cols-2">
               <Select label="Motivo" value={motivoEncerramento ?? ''} onChange={(value) => setMotivoEncerramento(value as Ficha['motivoEncerramento'])}
-                options={[{ value: 'ALTA', label: 'Alta' }, { value: 'ABANDONO', label: 'Abandono' }, { value: 'OBITO', label: 'Óbito' }]} disabled={loading} />
+                options={[{ value: 'ALTA', label: 'Alta' }, { value: 'ABANDONO', label: 'Abandono' }, { value: 'OBITO', label: 'Óbito' }]}
+                placeholder="Selecione o motivo" disabled={loading} />
               <Input label="Data" type="date" value={dataEncerramento} onChange={(event) => setDataEncerramento(event.target.value)} disabled={loading} />
             </div>}
           </div>

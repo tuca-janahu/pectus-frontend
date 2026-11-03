@@ -15,7 +15,7 @@ interface ApiFicha {
   procedimentoOutro: string | null
   observacoes: string | null
   criadoEm: string
-  historico: Array<{ tipo: string; em: string; autorContaId: number; campos: Record<string, unknown> }>
+  historico: Array<{ tipo: string; em: string; autorContaId: number; autorEmail?: string | null; campos: Record<string, unknown> }>
 }
 
 export interface FichaClinicalValues {

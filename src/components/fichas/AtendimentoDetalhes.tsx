@@ -176,7 +176,7 @@ export function AtendimentoDetalhes({ ficha }: { ficha: Ficha }) {
                           <span className="text-tm-sm font-semibold text-tm-fg">{EVENTOS[evento.tipo] ?? evento.tipo}</span>
                           <time dateTime={evento.em} className="text-tm-xs text-tm-fg-subtle">{formatarMomento(evento.em)}</time>
                         </div>
-                        <p className="mt-0.5 text-tm-xs text-tm-fg-muted">Registrado por usuário #{evento.autorContaId}</p>
+                        <p className="mt-0.5 text-tm-xs text-tm-fg-muted">Registrado por {evento.autorEmail || 'conta não identificada'}</p>
                         <Mudancas evento={evento} />
                       </div>
                     </li>

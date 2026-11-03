@@ -383,7 +383,7 @@ export function PacienteDetailsPage() {
             {!!paciente.historicoCadastral?.length && <details className="mt-4 text-tm-sm text-tm-fg-muted">
               <summary className="cursor-pointer">Histórico de alterações cadastrais</summary>
               {paciente.historicoCadastral.map((evento, index) => <div key={index} className="mt-2 border-t border-tm-border pt-2">
-                {new Date(evento.em).toLocaleString('pt-BR')} · Usuário #{evento.autorContaId ?? 'não identificado'}
+                {new Date(evento.em).toLocaleString('pt-BR')} · {evento.autorEmail || 'Conta não identificada'}
                 {Object.entries(evento.campos).map(([campo, mudanca]) => <span key={campo} className="block pl-3">
                   {campo}: {descreverMudanca(mudanca)}
                 </span>)}

@@ -233,7 +233,7 @@ export interface PacienteResumo {
   fotoUrl: string | null
   inativadoEm: string | null
   criadoEm: string
-  historicoCadastral?: Array<{ em: string; autorContaId: number | null; campos: Record<string, { antes: unknown; depois: unknown }> }>
+  historicoCadastral?: Array<{ em: string; autorContaId: number | null; autorEmail?: string | null; campos: Record<string, { antes: unknown; depois: unknown }> }>
 }
 
 export interface CreatePacienteInput {
