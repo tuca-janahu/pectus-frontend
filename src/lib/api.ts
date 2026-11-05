@@ -9,6 +9,8 @@ export interface AuthUser {
   // Ausente nas respostas de /auth/login e /auth/google (a foto só é resolvida
   // em /auth/me, que já faz a consulta extra de qualquer forma) — por isso opcional.
   fotoUrl?: string | null
+  notificacaoAtiva?: boolean
+  notificacaoAntecedencias?: number[]
 }
 
 export interface AuthSession {
@@ -280,7 +282,7 @@ export function uploadPacienteFoto(
   }).then((res) => parseJsonOrThrow<{ paciente: PacienteResumo }>(res))
 }
 
-export type ModuloAuditoria = 'AUTENTICACAO' | 'USUARIOS' | 'PACIENTES'
+export type ModuloAuditoria = 'AUTENTICACAO' | 'USUARIOS' | 'PACIENTES' | 'ATENDIMENTOS'
 
 export interface LogResumo {
   id: number
@@ -371,3 +373,20 @@ export function connectGoogleCalendar(accessToken: string, code: string): Promis
     body: JSON.stringify({ code }),
   }).then((res) => parseJsonOrThrow<{ message: string }>(res))
 }
+
+export async function updateNotificacaoPref(
+  accessToken: string,
+  input: { ativa: boolean; antecedencias: number[] },
+): Promise<void> {
+  const res = await fetch(`${API_URL}/contas/me/notificacao`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(input),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new ApiError(res.status, body?.error ?? 'Erro inesperado')
+  }
+}
+
+export const API_BASE_URL = API_URL

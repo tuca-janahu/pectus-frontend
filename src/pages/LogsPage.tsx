@@ -11,12 +11,14 @@ const MODULO_LABEL: Record<ModuloAuditoria, string> = {
   AUTENTICACAO: 'Autenticação',
   USUARIOS: 'Usuários',
   PACIENTES: 'Pacientes',
+  ATENDIMENTOS: 'Atendimentos',
 }
 
 const MODULO_CLASSES: Record<ModuloAuditoria, string> = {
   AUTENTICACAO: 'bg-tm-accent-primary-bg text-tm-accent-primary-fg',
   USUARIOS: 'bg-tm-status-pendente-bg text-tm-status-pendente-fg',
   PACIENTES: 'bg-tm-accent-green-bg text-tm-accent-green-fg',
+  ATENDIMENTOS: 'bg-tm-status-agendada-bg text-tm-status-agendada-fg',
 }
 
 const MODULO_OPTIONS = (Object.keys(MODULO_LABEL) as ModuloAuditoria[]).map((value) => ({

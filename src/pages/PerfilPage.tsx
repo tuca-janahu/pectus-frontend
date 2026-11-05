@@ -2,11 +2,12 @@ import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { Avatar, Card, Switch } from '../components/ui'
 import { IconBell, IconCamera, IconUser } from '../components/icons'
 import { useAuth } from '../auth/AuthContext'
-import { uploadContaFoto } from '../lib/api'
+import { uploadContaFoto, updateNotificacaoPref } from '../lib/api'
 import { toastError, toastPromise } from '../lib/toast'
 
 const FOTO_MIME_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp']
 const FOTO_MAX_BYTES = 8 * 1024 * 1024
+const ANTECEDENCIAS_OPCOES = [15, 30, 60]
 
 function obterIniciais(nome: string): string {
   const partes = nome.trim().split(/\s+/).filter(Boolean)
@@ -29,7 +30,9 @@ export function PerfilPage() {
 
   const [fotoPreviewUrl, setFotoPreviewUrl] = useState<string | null>(null)
   const [enviandoFoto, setEnviandoFoto] = useState(false)
-  const [notificacoesAtivas, setNotificacoesAtivas] = useState(false)
+  const [notificacoesAtivas, setNotificacoesAtivas] = useState(() => user?.notificacaoAtiva ?? false)
+  const [antecedencias, setAntecedencias] = useState<number[]>(() => user?.notificacaoAntecedencias ?? [])
+  const [salvandoNotif, setSalvandoNotif] = useState(false)
   const fotoInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -42,6 +45,40 @@ export function PerfilPage() {
     refreshUser().catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Sync notification prefs from user once loaded
+  useEffect(() => {
+    if (user) {
+      setNotificacoesAtivas(user.notificacaoAtiva ?? false)
+      setAntecedencias(user.notificacaoAntecedencias ?? [])
+    }
+  }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const salvarNotificacao = async (ativa: boolean, novasAntecedencias: number[]) => {
+    if (!accessToken) return
+    setSalvandoNotif(true)
+    try {
+      await updateNotificacaoPref(accessToken, { ativa, antecedencias: novasAntecedencias })
+      await refreshUser()
+    } catch {
+      toastError('Não foi possível salvar as preferências de notificação.')
+    } finally {
+      setSalvandoNotif(false)
+    }
+  }
+
+  const toggleNotificacoes = (checked: boolean) => {
+    setNotificacoesAtivas(checked)
+    salvarNotificacao(checked, antecedencias)
+  }
+
+  const toggleAntecedencia = (minutos: number) => {
+    const novas = antecedencias.includes(minutos)
+      ? antecedencias.filter((a) => a !== minutos)
+      : [...antecedencias, minutos]
+    setAntecedencias(novas)
+    salvarNotificacao(notificacoesAtivas, novas)
+  }
 
   const selecionarFoto = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -145,18 +182,35 @@ export function PerfilPage() {
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
               <div className="text-tm-md font-semibold text-tm-fg">Ativar notificações</div>
-              <div className="text-tm-sm text-tm-fg-muted">Receba alertas sobre atendimentos e agendamentos.</div>
+              <div className="text-tm-sm text-tm-fg-muted">Receba alertas sobre atendimentos próximos.</div>
             </div>
-            <Switch checked={notificacoesAtivas} onChange={setNotificacoesAtivas} label="Ativar notificações" />
+            <Switch
+              checked={notificacoesAtivas}
+              onChange={toggleNotificacoes}
+              label="Ativar notificações"
+              disabled={salvandoNotif}
+            />
           </div>
 
-          <div className="flex items-start gap-3 rounded-tm-card border border-tm-border bg-tm-surface-2 p-4">
-            <IconBell size={20} style={{ color: 'var(--tm-primary)', marginTop: 2 }} />
-            <p className="text-tm-sm leading-[1.5] text-tm-fg-muted">
-              Em breve: notificações por e-mail e push. Por enquanto esta opção é apenas visual e não afeta o
-              sistema.
-            </p>
-          </div>
+          {notificacoesAtivas && (
+            <div className="flex flex-col gap-2">
+              <div className="text-tm-sm font-medium text-tm-fg">Alertar com antecedência de:</div>
+              <div className="flex flex-wrap gap-3">
+                {ANTECEDENCIAS_OPCOES.map((min) => (
+                  <label key={min} className="flex cursor-pointer items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={antecedencias.includes(min)}
+                      onChange={() => toggleAntecedencia(min)}
+                      disabled={salvandoNotif}
+                      className="h-4 w-4 cursor-pointer accent-[var(--tm-primary)]"
+                    />
+                    <span className="text-tm-sm text-tm-fg">{min} min</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </Card>
     </div>

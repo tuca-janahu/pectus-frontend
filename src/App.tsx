@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate, matchPath } from 'react-router-dom'
 import { AppShell, TM_NAV_ITEMS, type RouteId } from './shell'
-import { TM_NOTIFICATIONS } from './data/notifications'
 import { HomePage } from './pages/HomePage'
 import { ScreenPlaceholder } from './pages/ScreenPlaceholder'
 import { AdminPage } from './pages/AdminPage'
@@ -13,6 +12,7 @@ import { ResetPasswordPage } from './pages/auth/ResetPasswordPage'
 import { ActivatePage } from './pages/auth/ActivatePage'
 import { RequireAuth } from './auth/RequireAuth'
 import { useAuth } from './auth/AuthContext'
+import { useNotificacoesSSE } from './hooks/useNotificacoesSSE'
 import { PacientesPage } from './pages/pacientes/PacientesPage'
 import { PacienteDetailsPage } from './pages/pacientes/PacienteDetailsPage'
 import { AtendimentosPage } from './pages/AtendimentosPage'
@@ -36,8 +36,8 @@ function RedirecionarFichasAntigas() {
 function AuthenticatedApp() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { logout } = useAuth()
-  const [notifications, setNotifications] = useState(TM_NOTIFICATIONS)
+  const { logout, user, accessToken } = useAuth()
+  const { notifications, markAsRead } = useNotificacoesSSE(accessToken, user)
   const [searchTerm, setSearchTerm] = useState('')
   const [pacientesCount, setPacientesCount] = useState<number | null>(null)
   const [atendimentosCount, setAtendimentosCount] = useState<number | null>(null)
@@ -74,9 +74,7 @@ function AuthenticatedApp() {
               : activeItem.subtitle
       }
       notifications={notifications}
-      onMarkNotification={(id) =>
-        setNotifications((arr) => arr.map((n) => (n.id === id ? { ...n, unread: false } : n)))
-      }
+      onMarkNotification={markAsRead}
       topBarContent={
         isPacientesRoute ? (
           <div className="flex gap-3 pt-2 pb-1">
