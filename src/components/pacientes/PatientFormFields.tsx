@@ -8,7 +8,6 @@ import { obterIniciais, type PatientFormState } from './usePatientForm'
 const GENERO_OPTIONS = [
   { value: 'MASCULINO', label: 'Masculino' },
   { value: 'FEMININO', label: 'Feminino' },
-  { value: 'OUTRO', label: 'Outro' },
 ]
 
 interface PatientFormFieldsProps {
