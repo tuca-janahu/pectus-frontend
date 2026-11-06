@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation, useNavigate, matchPath } from 're
 import { AppShell, TM_NAV_ITEMS, type RouteId } from './shell'
 import { TM_NOTIFICATIONS } from './data/notifications'
 import { HomePage } from './pages/HomePage'
+import { DashboardPage } from './pages/DashboardPage'
 import { ScreenPlaceholder } from './pages/ScreenPlaceholder'
 import { AdminPage } from './pages/AdminPage'
 import { LogsPage } from './pages/LogsPage'
@@ -108,6 +109,8 @@ function AuthenticatedApp() {
             element={
               item.id === 'home' ? (
                 <HomePage />
+              ) : item.id === 'dashboard' ? (
+                <DashboardPage />
               ) : item.id === 'admin' ? (
                 <AdminPage />
               ) : item.id === 'busca' ? (

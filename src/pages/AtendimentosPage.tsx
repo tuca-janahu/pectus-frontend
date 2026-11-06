@@ -65,7 +65,9 @@ export function AtendimentosPage({ onCountChange }: AtendimentosPageProps) {
   const location = useLocation()
   const { accessToken, user } = useAuth()
 
-  const [filtro, setFiltro] = useState<Filtro>('todas')
+  const statusParam = new URLSearchParams(location.search).get('status')
+  const filtroInicial: Filtro = statusParam === 'CONCLUIDA' ? 'concluida' : statusParam === 'CANCELADA' ? 'cancelada' : statusParam === 'AGENDADA' ? 'agendada' : statusParam === 'EM_PREENCHIMENTO' ? 'pendente' : 'todas'
+  const [filtro, setFiltro] = useState<Filtro>(filtroInicial)
 
   const [atendimentos, setAtendimentos] = useState<Atendimento[]>([])
   const [pacientes, setPacientes] = useState<PacienteResumo[]>([])
@@ -87,10 +89,18 @@ export function AtendimentosPage({ onCountChange }: AtendimentosPageProps) {
 
   const carregarAtendimentos = useCallback(async () => {
     if (!accessToken) return
-    const lista = await listAtendimentos(accessToken)
+    const query = new URLSearchParams(location.search)
+    const de = query.get('de')
+    const ate = query.get('ate')
+    const medicoId = Number(query.get('medicoId'))
+    const lista = await listAtendimentos(accessToken, {
+      de: de && /^\d{4}-\d{2}-\d{2}$/.test(de) ? de : undefined,
+      ate: ate && /^\d{4}-\d{2}-\d{2}$/.test(ate) ? ate : undefined,
+      medicoId: Number.isInteger(medicoId) && medicoId > 0 ? medicoId : undefined,
+    })
     setAtendimentos(lista)
     onCountChange?.(lista.length)
-  }, [accessToken, onCountChange])
+  }, [accessToken, onCountChange, location.search])
 
   const carregarPacientes = useCallback(async () => {
     if (!accessToken) return

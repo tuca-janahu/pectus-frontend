@@ -183,8 +183,20 @@ function camposClinicosPayload(input: AtendimentoInput): Record<string, string |
   return payload
 }
 
-export async function listAtendimentos(accessToken: string): Promise<Atendimento[]> {
-  const { atendimentos } = await request<{ atendimentos: ApiAtendimento[] }>(accessToken, '/atendimentos')
+export interface FiltrosAtendimentos {
+  de?: string
+  ate?: string
+  medicoId?: number
+  status?: ApiStatus
+}
+
+export async function listAtendimentos(accessToken: string, filtros?: FiltrosAtendimentos): Promise<Atendimento[]> {
+  const params = new URLSearchParams()
+  if (filtros?.de) params.set('de', `${filtros.de}T00:00:00-03:00`)
+  if (filtros?.ate) params.set('ate', `${filtros.ate}T23:59:59.999-03:00`)
+  if (filtros?.medicoId) params.set('medicoId', String(filtros.medicoId))
+  if (filtros?.status) params.set('status', filtros.status)
+  const { atendimentos } = await request<{ atendimentos: ApiAtendimento[] }>(accessToken, `/atendimentos${params.size ? `?${params}` : ''}`)
   return atendimentos.map((atendimento) => paraAtendimento(atendimento))
 }
 
