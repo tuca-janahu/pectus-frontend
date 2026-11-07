@@ -256,24 +256,19 @@ export function CalendarioPage() {
     void carregarDados()
   }, [carregarDados, anoAtual, mesAtual])
 
-  // Navegação de meses
-  const irMesAnterior = () => {
-    if (mesAtual === 0) {
-      setMesAtual(11)
-      setAnoAtual((a) => a - 1)
-    } else {
-      setMesAtual((m) => m - 1)
-    }
+  // Ao navegar, mantém o dia selecionado quando possível e limita ao último dia do novo mês.
+  const mudarMes = (ano: number, mes: number) => {
+    const data = new Date(ano, mes, 1)
+    const novoAno = data.getFullYear()
+    const novoMes = data.getMonth()
+    const dia = Math.min(Number(diaSelecionado.slice(8, 10)), new Date(novoAno, novoMes + 1, 0).getDate())
+    setAnoAtual(novoAno)
+    setMesAtual(novoMes)
+    setDiaSelecionado(`${novoAno}-${String(novoMes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`)
   }
 
-  const irProximoMes = () => {
-    if (mesAtual === 11) {
-      setMesAtual(0)
-      setAnoAtual((a) => a + 1)
-    } else {
-      setMesAtual((m) => m + 1)
-    }
-  }
+  const irMesAnterior = () => mudarMes(anoAtual, mesAtual - 1)
+  const irProximoMes = () => mudarMes(anoAtual, mesAtual + 1)
 
   const irParaHoje = () => {
     const d = new Date()
@@ -283,8 +278,7 @@ export function CalendarioPage() {
   }
 
   const selecionarMesAno = (m: number, a: number) => {
-    setMesAtual(m)
-    setAnoAtual(a)
+    mudarMes(a, m)
     setSeletorAberto(false)
   }
 
@@ -342,7 +336,7 @@ export function CalendarioPage() {
       : `${totalAtendimentosDia} ${totalAtendimentosDia === 1 ? 'atendimento' : 'atendimentos'} neste dia`
 
   return (
-    <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-6 text-tm-fg">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 text-tm-fg">
       {/* 1. CARD NO TOPO: Integrar com o Google Agenda (Apenas quando desconectado) */}
       {!verificandoStatus && conectado === false && (
         <Card
@@ -384,11 +378,12 @@ export function CalendarioPage() {
         </Card>
       )}
 
-      {/* 2. CABEÇALHO DO MÊS E NAVEGAÇÃO INTERATIVA (BLOCO AZUL) + GRELHA */}
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(340px,2fr)]">
+      <div className="min-w-0">
       <Card padded={false} style={{ overflow: 'visible' }}>
-        <div className="rounded-tm-card overflow-hidden">
+        <div className="rounded-tm-card">
           {/* BLOCO AZUL: Ano, Mês com seletor interativo e navegação */}
-          <div className="relative flex items-center justify-between bg-[linear-gradient(135deg,var(--tm-primary)_0%,var(--tm-primary-deep)_100%)] p-5 text-white">
+          <div className="relative flex items-center justify-between rounded-t-tm-card bg-[linear-gradient(135deg,var(--tm-primary)_0%,var(--tm-primary-deep)_100%)] p-3 text-white">
             {/* Lado Esquerdo: Mês e Ano com Seletor Interativo */}
             <div className="relative" ref={seletorRef}>
               <button
@@ -471,7 +466,7 @@ export function CalendarioPage() {
                 type="button"
                 onClick={irMesAnterior}
                 aria-label="Mês anterior"
-                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-tm-button border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20 active:bg-white/30"
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-tm-button border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20 active:bg-white/30"
               >
                 <IconChevronLeft size={20} />
               </button>
@@ -479,7 +474,7 @@ export function CalendarioPage() {
                 type="button"
                 onClick={irProximoMes}
                 aria-label="Próximo mês"
-                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-tm-button border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20 active:bg-white/30"
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-tm-button border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20 active:bg-white/30"
               >
                 <IconChevronRight size={20} />
               </button>
@@ -489,42 +484,38 @@ export function CalendarioPage() {
           {/* CABEÇALHO DA GRELHA (DOM, SEG, TER...) */}
           <div className="grid grid-cols-7 border-b border-tm-border bg-tm-surface-2 text-center text-tm-xs font-bold uppercase tracking-wider text-tm-fg-muted">
             {DIAS_SEMANA.map((dia) => (
-              <div key={dia} className="py-2.5">
+              <div key={dia} className="py-1.5">
                 {dia}
               </div>
             ))}
           </div>
 
           {/* GRELHA MENSAL COM BADGE NUMÉRICO CIRCULAR DE NOTIFICAÇÃO */}
-          <div className="grid grid-cols-7 gap-px bg-tm-border">
+          <div className="grid grid-cols-7 gap-px overflow-hidden rounded-b-tm-card bg-tm-border">
             {diasGrade.map((dia) => {
               const isSelecionado = dia.dataISO === diaSelecionado
               const quantidadeConsultas = dia.atendimentos.length
 
               return (
-                <div
+                <button
                   key={dia.dataISO}
-                  role="button"
-                  tabIndex={0}
+                  type="button"
+                  aria-label={`${formatarDataResumo(dia.dataISO)}, ${quantidadeConsultas} ${quantidadeConsultas === 1 ? 'atendimento' : 'atendimentos'}`}
+                  aria-pressed={isSelecionado}
                   onClick={() => setDiaSelecionado(dia.dataISO)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      setDiaSelecionado(dia.dataISO)
-                    }
-                  }}
-                  className={`relative flex min-h-[76px] sm:min-h-[92px] cursor-pointer flex-col items-center justify-center p-2 transition-all focus:outline-none ${
+                  className={`relative flex min-h-[48px] w-full cursor-pointer flex-col items-center justify-center p-1 transition-colors focus-visible:z-20 focus-visible:outline-2 focus-visible:outline-tm-primary sm:min-h-[56px] ${
                     dia.mesAtual ? 'bg-tm-surface' : 'bg-tm-surface-2/40 text-tm-fg-subtle'
                   } ${
                     isSelecionado
-                      ? 'border-2 border-tm-primary bg-[color-mix(in_oklch,var(--tm-primary)_9%,var(--tm-surface))] rounded-tm-card shadow-tm-card z-10 m-[-1px]'
+                      ? 'ring-2 ring-inset ring-tm-primary bg-[color-mix(in_oklch,var(--tm-primary)_9%,var(--tm-surface))] z-10'
                       : 'hover:bg-tm-surface-2'
                   }`}
                 >
                   {/* Badge numérico circular de notificação com cor idêntica ao sino do sistema */}
                   {quantidadeConsultas > 0 && (
                     <span
-                      className="absolute top-2 right-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-tm-badge-count-bg px-1.5 text-tm-xs font-bold text-white shadow-tm-card"
+                      className="absolute right-1 top-1 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-tm-badge-count-bg px-1 text-[10px] font-bold text-white shadow-tm-card"
+                      aria-hidden="true"
                       title={`${quantidadeConsultas} atendimento(s) no dia`}
                     >
                       {quantidadeConsultas}
@@ -533,7 +524,7 @@ export function CalendarioPage() {
 
                   {/* Número do Dia */}
                   <span
-                    className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-tm-sm font-semibold transition-transform ${
+                    className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-tm-sm font-semibold ${
                       dia.isHoje
                         ? 'bg-tm-primary text-white shadow-tm-card'
                         : isSelecionado
@@ -545,27 +536,26 @@ export function CalendarioPage() {
                   >
                     {dia.diaNumero}
                   </span>
-                </div>
+                </button>
               )
             })}
           </div>
         </div>
       </Card>
+      </div>
 
-      {/* 4. BARRA DE RESUMO DO DIA SELECIONADO */}
-      <div className="flex flex-col gap-3 rounded-tm-card border border-tm-border bg-tm-surface p-4 sm:flex-row sm:items-center sm:justify-between shadow-tm-card">
-        {/* À Esquerda: Data completa e total de atendimentos */}
-        <div>
+      <section aria-label="Atendimentos do dia selecionado" className="flex min-w-0 flex-col overflow-hidden rounded-tm-card border border-tm-border bg-tm-surface shadow-tm-card xl:max-h-[445px]">
+      <div className="shrink-0 border-b border-tm-border p-3">
+        <div className="min-w-0">
           <h3 className="text-tm-lg font-bold tracking-[-0.01em] text-tm-fg">
             {formatarDataResumo(diaSelecionado)}
           </h3>
-          <p className="mt-0.5 text-tm-sm text-tm-fg-muted font-medium">
+          <p className="mt-0.5 text-tm-sm font-medium text-tm-fg-muted">
             {textoTotalAtendimentos}
           </p>
         </div>
 
-        {/* À Direita: Botão secundário "Hoje" e botão primário "+ Novo Agendamento" */}
-        <div className="flex items-center gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <Button variant="secondary" size="sm" onClick={irParaHoje}>
             Hoje
           </Button>
@@ -575,21 +565,17 @@ export function CalendarioPage() {
             icon={<IconPlus size={16} />}
             onClick={() => navigate(`/atendimentos/novo?data=${diaSelecionado}`)}
           >
-            Novo Agendamento
+            Novo agendamento
           </Button>
         </div>
       </div>
 
-      {/* 5. LISTA DE AGENDAMENTOS (CARDS DOS PACIENTES DO DIA SELECIONADO) */}
-      <div className="flex flex-col gap-3">
+      <div className="flex min-h-0 flex-col gap-2.5 overflow-y-auto p-3 xl:flex-1">
         {loadingAgenda ? (
-          <Card padded>
-            <div className="py-6 text-center text-tm-sm text-tm-fg-muted">
+            <div className="py-8 text-center text-tm-sm text-tm-fg-muted">
               Carregando agendamentos...
             </div>
-          </Card>
         ) : atendimentosDoDiaSelecionado.length === 0 ? (
-          <Card padded>
             <EmptyState
               icon={<IconCalendar size={28} />}
               title="Nenhum atendimento neste dia"
@@ -604,7 +590,6 @@ export function CalendarioPage() {
                 </Button>
               }
             />
-          </Card>
         ) : (
           atendimentosDoDiaSelecionado.map((atendimento) => {
             const paciente = pacientes.find((p) => p.id === atendimento.pacienteId)
@@ -625,6 +610,8 @@ export function CalendarioPage() {
             )
           })
         )}
+      </div>
+      </section>
       </div>
       <ConfirmDialog open={!!cancelTarget} title="Cancelar atendimento?"
         description="O cancelamento é definitivo. Para atender o paciente depois, será necessário criar outro agendamento."
